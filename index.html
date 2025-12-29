@@ -5,16 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dayne | Coming Soon</title>
     <meta name="description" content="Personal blog and portfolio of Dayne. Coming soon.">
-    
-    <!-- Preload fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Styrene+A:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Open Graph meta tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://dayne.online/">
+    <meta property="og:title" content="Dayne | Coming Soon">
+    <meta property="og:description" content="Something new is coming. A personal space for Dayne to build and share.">
+    <meta property="og:site_name" content="dayne.online">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Dayne | Coming Soon">
+    <meta name="twitter:description" content="Something new is coming. A personal space for Dayne to build and share.">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://dayne.online/">
+
+    <!-- Preload critical font -->
+    <link rel="preconnect" href="https://fonts.cdnfonts.com" crossorigin>
+    <link rel="preload" href="https://fonts.cdnfonts.com/css/soehne" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.cdnfonts.com/css/soehne"></noscript>
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "dayne.online",
+        "url": "https://dayne.online/",
+        "description": "Personal blog and portfolio of Dayne. Coming soon.",
+        "author": {
+            "@type": "Person",
+            "name": "Dayne",
+            "url": "https://dayne.online/"
+        }
+    }
+    </script>
     
     <style>
-        /* Claude uses a custom font similar to Söhne, we'll use a close alternative */
-        @import url('https://fonts.cdnfonts.com/css/soehne');
-        
         :root {
             --color-bg: #faf9f7;
             --color-text: #1a1a1a;
@@ -170,6 +198,22 @@
             width: 100%;
         }
 
+        /* Focus styles for keyboard navigation */
+        .links a:focus {
+            outline: none;
+            color: var(--color-text);
+        }
+
+        .links a:focus::after {
+            width: 100%;
+        }
+
+        .links a:focus-visible {
+            outline: 2px solid var(--color-accent);
+            outline-offset: 4px;
+            border-radius: 2px;
+        }
+
         /* Decorative corner elements */
         .corner {
             position: fixed;
@@ -246,22 +290,22 @@
     <div class="corner corner--tl"></div>
     <div class="corner corner--br"></div>
     
-    <div class="container">
-        <div class="logo">dayne.online</div>
-        
+    <main class="container">
+        <div class="logo" aria-label="dayne.online">dayne.online</div>
+
         <div class="main-content">
             <h1>Something new is coming</h1>
             <p class="tagline">Just a space for me to mess around in. Not sure what it will become just yet.</p>
-            
-            <div class="status">
-                <span class="status-dot"></span>
+
+            <div class="status" role="status" aria-label="Status: Currently building">
+                <span class="status-dot" aria-hidden="true"></span>
                 Currently building
             </div>
         </div>
-        
-        <nav class="links">
+
+        <nav class="links" aria-label="Contact links">
             <a href="mailto:me@dayne.online">Contact</a>
         </nav>
-    </div>
+    </main>
 </body>
 </html>
