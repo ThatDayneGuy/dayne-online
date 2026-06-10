@@ -3,309 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dayne | Coming Soon</title>
-    <meta name="description" content="Personal blog and portfolio of Dayne. Coming soon.">
+    <title>Dayne — Photographer &amp; Writer</title>
+    <meta name="description" content="The photography portfolio and journal of Dayne. Quiet photographs, occasional words.">
 
-    <!-- Open Graph meta tags -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://dayne.online/">
-    <meta property="og:title" content="Dayne | Coming Soon">
-    <meta property="og:description" content="Something new is coming. A personal space for Dayne to build and share.">
+    <meta property="og:title" content="Dayne — Photographer &amp; Writer">
+    <meta property="og:description" content="Photography portfolio and journal. Quiet photographs, occasional words.">
     <meta property="og:site_name" content="dayne.online">
-
-    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Dayne | Coming Soon">
-    <meta name="twitter:description" content="Something new is coming. A personal space for Dayne to build and share.">
-
-    <!-- Canonical URL -->
     <link rel="canonical" href="https://dayne.online/">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230c0c0c'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Helvetica' font-size='17' font-weight='700' fill='%23f3f2ef'%3ED%3C/text%3E%3C/svg%3E">
 
-    <!-- Preload critical font -->
-    <link rel="preconnect" href="https://fonts.cdnfonts.com" crossorigin>
-    <link rel="preload" href="https://fonts.cdnfonts.com/css/soehne" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.cdnfonts.com/css/soehne"></noscript>
+    <script>
+    (function () {
+        var d = document.documentElement;
+        d.classList.add("js");
+        try {
+            if (sessionStorage.getItem("pt")) { d.classList.add("pt-in"); sessionStorage.removeItem("pt"); }
+            if (!sessionStorage.getItem("visited")) { d.classList.add("preload"); }
+        } catch (e) {}
+    })();
+    </script>
 
-    <!-- Structured Data (JSON-LD) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@100..900&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/main.css">
+
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
         "@type": "WebSite",
         "name": "dayne.online",
         "url": "https://dayne.online/",
-        "description": "Personal blog and portfolio of Dayne. Coming soon.",
-        "author": {
-            "@type": "Person",
-            "name": "Dayne",
-            "url": "https://dayne.online/"
-        }
+        "description": "Photography portfolio and journal of Dayne.",
+        "author": { "@type": "Person", "name": "Dayne", "url": "https://dayne.online/", "jobTitle": "Photographer" }
     }
     </script>
-    
-    <style>
-        :root {
-            --color-bg: #faf9f7;
-            --color-text: #1a1a1a;
-            --color-text-muted: #6b6b6b;
-            --color-accent: #c9501c;
-            --color-border: rgba(0, 0, 0, 0.08);
-            --font-main: 'Soehne', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --color-bg: #1a1a1a;
-                --color-text: #f5f5f3;
-                --color-text-muted: #9a9a9a;
-                --color-accent: #e86c3d;
-                --color-border: rgba(255, 255, 255, 0.1);
-            }
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html {
-            font-size: 16px;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        body {
-            font-family: var(--font-main);
-            background-color: var(--color-bg);
-            color: var(--color-text);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 2rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* Subtle grain texture */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0.03;
-            pointer-events: none;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-        }
-
-        .container {
-            max-width: 560px;
-            width: 100%;
-            text-align: center;
-            position: relative;
-            z-index: 1;
-        }
-
-        .logo {
-            font-size: 1.125rem;
-            font-weight: 500;
-            letter-spacing: -0.01em;
-            margin-bottom: 4rem;
-            opacity: 0;
-            animation: fadeUp 0.8s var(--transition-smooth) 0.2s forwards;
-        }
-
-        .main-content {
-            opacity: 0;
-            animation: fadeUp 0.8s var(--transition-smooth) 0.4s forwards;
-        }
-
-        h1 {
-            font-size: clamp(2.5rem, 8vw, 4rem);
-            font-weight: 400;
-            letter-spacing: -0.03em;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-        }
-
-        .tagline {
-            font-size: 1.125rem;
-            color: var(--color-text-muted);
-            line-height: 1.6;
-            max-width: 400px;
-            margin: 0 auto 3rem;
-            letter-spacing: -0.01em;
-        }
-
-        .status {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.875rem;
-            color: var(--color-text-muted);
-            padding: 0.625rem 1rem;
-            border: 1px solid var(--color-border);
-            border-radius: 100px;
-            background: transparent;
-        }
-
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            background-color: var(--color-accent);
-            border-radius: 50%;
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        .links {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-top: 4rem;
-            opacity: 0;
-            animation: fadeUp 0.8s var(--transition-smooth) 0.6s forwards;
-        }
-
-        .links a {
-            color: var(--color-text-muted);
-            text-decoration: none;
-            font-size: 0.875rem;
-            letter-spacing: -0.01em;
-            position: relative;
-            transition: color 0.2s ease;
-        }
-
-        .links a::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            width: 0;
-            height: 1px;
-            background-color: var(--color-text);
-            transition: width 0.3s var(--transition-smooth);
-        }
-
-        .links a:hover {
-            color: var(--color-text);
-        }
-
-        .links a:hover::after {
-            width: 100%;
-        }
-
-        /* Focus styles for keyboard navigation */
-        .links a:focus {
-            outline: none;
-            color: var(--color-text);
-        }
-
-        .links a:focus::after {
-            width: 100%;
-        }
-
-        .links a:focus-visible {
-            outline: 2px solid var(--color-accent);
-            outline-offset: 4px;
-            border-radius: 2px;
-        }
-
-        /* Decorative corner elements */
-        .corner {
-            position: fixed;
-            width: 80px;
-            height: 80px;
-            opacity: 0;
-            animation: fadeIn 1s var(--transition-smooth) 0.8s forwards;
-        }
-
-        .corner--tl {
-            top: 2rem;
-            left: 2rem;
-            border-top: 1px solid var(--color-border);
-            border-left: 1px solid var(--color-border);
-        }
-
-        .corner--br {
-            bottom: 2rem;
-            right: 2rem;
-            border-bottom: 1px solid var(--color-border);
-            border-right: 1px solid var(--color-border);
-        }
-
-        @keyframes fadeUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 640px) {
-            .logo {
-                margin-bottom: 3rem;
-            }
-
-            .links {
-                gap: 1.5rem;
-                margin-top: 3rem;
-            }
-
-            .corner {
-                width: 40px;
-                height: 40px;
-            }
-
-            .corner--tl {
-                top: 1rem;
-                left: 1rem;
-            }
-
-            .corner--br {
-                bottom: 1rem;
-                right: 1rem;
-            }
-        }
-    </style>
 </head>
 <body>
-    <div class="corner corner--tl"></div>
-    <div class="corner corner--br"></div>
-    
-    <main class="container">
-        <div class="logo" aria-label="dayne.online">dayne.online</div>
 
-        <div class="main-content">
-            <h1>Something new is coming</h1>
-            <p class="tagline">Just a space for me to mess around in. Not sure what it will become just yet.</p>
+    <div class="preloader" aria-hidden="true">
+        <span class="label">Dayne — Portfolio &amp; Journal</span>
+        <span class="preloader-count">000</span>
+    </div>
 
-            <div class="status" role="status" aria-label="Status: Currently building">
-                <span class="status-dot" aria-hidden="true"></span>
-                Currently building
+    <div class="transition" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="cursor" aria-hidden="true"><span class="cursor-label"></span></div>
+
+    <header class="site-header">
+        <a class="logo" href="index.html">Dayne<sup>&copy;</sup></a>
+        <nav class="site-nav" aria-label="Primary">
+            <a href="work.html">Work</a>
+            <a href="journal.html">Journal</a>
+            <a href="about.html">About</a>
+        </nav>
+        <button class="menu-toggle" aria-expanded="false" aria-controls="menu" aria-label="Open menu">
+            <span></span><span></span>
+        </button>
+    </header>
+
+    <nav class="menu" id="menu" aria-label="Menu">
+        <ol>
+            <li><a href="index.html"><span>Index</span></a></li>
+            <li><a href="work.html"><span>Work</span></a></li>
+            <li><a href="journal.html"><span>Journal</span></a></li>
+            <li><a href="about.html"><span>About</span></a></li>
+        </ol>
+        <div class="menu-foot">
+            <a href="mailto:me@dayne.online">me@dayne.online</a>
+            <span>&copy; 2026</span>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Hero -->
+        <section class="hero">
+            <h1 class="hero-title" data-hero-title>
+                <span class="line">Dayne</span>
+            </h1>
+            <div class="hero-meta">
+                <span class="label">Photographer &amp; occasional writer</span>
+                <span class="label serif-i" style="text-transform: none; font-size: 1rem; letter-spacing: 0;">quiet pictures, loud thoughts</span>
+                <span class="label">Portfolio &amp; Journal — Est. 2026</span>
+            </div>
+            <span class="hero-scroll label" aria-hidden="true">Scroll</span>
+        </section>
+
+        <div class="hero-figure" data-scale-in>
+            <div class="frame" data-parallax>
+                <img src="https://picsum.photos/seed/dayne-hero/2400/1350?grayscale" alt="Wide monochrome landscape photograph" fetchpriority="high">
             </div>
         </div>
 
-        <nav class="links" aria-label="Contact links">
-            <a href="mailto:me@dayne.online">Contact</a>
-        </nav>
+        <!-- Statement -->
+        <section class="section wrap">
+            <p class="label" data-reveal style="margin-bottom: 2rem;">01 — Hello</p>
+            <p class="statement" data-split-words>I make quiet photographs and write about whatever follows me home. This site is my portfolio, my notebook, and my <span class="serif-i">excuse to look closer.</span></p>
+            <p class="statement-foot" data-reveal>Everything here — the pictures, the musings, the half-formed ideas — is part of the same habit: paying attention, then making something of it.</p>
+        </section>
+
+        <!-- Selected work -->
+        <section class="section wrap">
+            <div class="section-head" data-reveal>
+                <h2>Selected work</h2>
+                <a class="label" href="work.html" style="border-bottom: 1px solid currentColor; padding-bottom: 0.3em;">All work</a>
+            </div>
+
+            <article class="feature">
+                <a class="feature-media" href="work/threshold.html" data-cursor="View" aria-label="View Threshold series">
+                    <div class="frame" data-reveal-img data-parallax>
+                        <img src="https://picsum.photos/seed/dayne-w1/1600/1200?grayscale" alt="A doorway caught between light and shadow" loading="lazy">
+                    </div>
+                </a>
+                <div class="feature-info" data-reveal>
+                    <span class="index">№ 01 — 2025</span>
+                    <h3>Threshold</h3>
+                    <p>Doorways, edges and the in-between spaces people pass through without looking.</p>
+                    <a class="more" href="work/threshold.html">View series</a>
+                </div>
+            </article>
+
+            <article class="feature">
+                <a class="feature-media" href="work/stillness.html" data-cursor="View" aria-label="View Stillness series">
+                    <div class="frame" data-reveal-img data-parallax>
+                        <img src="https://picsum.photos/seed/dayne-w2/1600/1200?grayscale" alt="A still, empty landscape under flat light" loading="lazy">
+                    </div>
+                </a>
+                <div class="feature-info" data-reveal>
+                    <span class="index">№ 02 — 2024</span>
+                    <h3>Stillness</h3>
+                    <p>Landscapes with nothing happening in them. That is the point.</p>
+                    <a class="more" href="work/stillness.html">View series</a>
+                </div>
+            </article>
+
+            <article class="feature">
+                <a class="feature-media" href="work/soft-static.html" data-cursor="View" aria-label="View Soft Static series">
+                    <div class="frame" data-reveal-img data-parallax>
+                        <img src="https://picsum.photos/seed/dayne-w3/1600/1200?grayscale" alt="A city street at night, blurred lights" loading="lazy">
+                    </div>
+                </a>
+                <div class="feature-info" data-reveal>
+                    <span class="index">№ 03 — 2024</span>
+                    <h3>Soft Static</h3>
+                    <p>The city after midnight — noise, grain and whatever the streetlights allow.</p>
+                    <a class="more" href="work/soft-static.html">View series</a>
+                </div>
+            </article>
+        </section>
+
+        <!-- Marquee -->
+        <a class="marquee" href="work.html" aria-label="View the portfolio">
+            <div class="marquee-track">
+                <span>Portfolio</span><span class="serif-i">journal</span><span>Prints</span><span class="serif-i">musings</span>
+                <span aria-hidden="true">Portfolio</span><span class="serif-i" aria-hidden="true">journal</span><span aria-hidden="true">Prints</span><span class="serif-i" aria-hidden="true">musings</span>
+            </div>
+        </a>
+
+        <!-- Journal preview -->
+        <section class="section wrap">
+            <div class="section-head" data-reveal>
+                <h2>From the journal</h2>
+                <a class="label" href="journal.html" style="border-bottom: 1px solid currentColor; padding-bottom: 0.3em;">All entries</a>
+            </div>
+
+            <div class="row-list" data-reveal>
+                <a class="row" href="journal/on-waiting.html" data-img="https://picsum.photos/seed/dayne-j1/600/750?grayscale">
+                    <span class="date">Mar 2026</span>
+                    <span class="title">On waiting</span>
+                    <span class="tag">Field notes</span>
+                </a>
+                <a class="row" href="journal/why-black-and-white.html" data-img="https://picsum.photos/seed/dayne-j2/600/750?grayscale">
+                    <span class="date">Jan 2026</span>
+                    <span class="title">Why black &amp; white</span>
+                    <span class="tag">Essay</span>
+                </a>
+                <a class="row" href="journal/one-camera-one-lens.html" data-img="https://picsum.photos/seed/dayne-j3/600/750?grayscale">
+                    <span class="date">Nov 2025</span>
+                    <span class="title">One camera, one lens</span>
+                    <span class="tag">Process</span>
+                </a>
+            </div>
+        </section>
     </main>
+
+    <div class="list-preview" aria-hidden="true"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt=""></div>
+
+    <footer class="site-footer">
+        <a class="footer-cta" href="mailto:me@dayne.online">
+            <span class="label">A commission, a print, or just a thought —</span>
+            <span class="big">Say hello</span>
+        </a>
+        <div class="footer-grid">
+            <span>&copy; 2026 Dayne — All rights reserved</span>
+            <nav aria-label="Footer">
+                <a href="work.html">Work</a>
+                <a href="journal.html">Journal</a>
+                <a href="about.html">About</a>
+                <a href="mailto:me@dayne.online">Email</a>
+            </nav>
+            <button class="to-top">Back to top &uarr;</button>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
+    <script src="assets/js/main.js"></script>
 </body>
 </html>
