@@ -9,8 +9,13 @@
     <meta property="og:url" content="https://dayne.online/archive.html">
     <meta property="og:title" content="Archive — Dayne">
     <meta property="og:description" content="Every frame, one endless contact sheet.">
+    <meta property="og:image" content="https://picsum.photos/seed/dayne-w2/1200/630?grayscale">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <link rel="canonical" href="https://dayne.online/archive.html">
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230c0c0c'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Helvetica' font-size='17' font-weight='700' fill='%23f3f2ef'%3ED%3C/text%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <meta name="theme-color" content="#f5f4f1">
 
     <script>
     (function () {
@@ -27,6 +32,8 @@
     <link rel="stylesheet" href="assets/css/main.css">
 </head>
 <body class="archive-page">
+
+    <a class="skip-link" href="#main">Skip to content</a>
 
     <div class="transition" aria-hidden="true"><div class="panel"><span class="fr"></span></div></div>
     <div class="cursor" aria-hidden="true"><span class="cursor-label"></span></div>
@@ -59,7 +66,7 @@
         </div>
     </nav>
 
-    <main data-archive data-cursor="Drag">
+    <main id="main" tabindex="-1" data-archive data-cursor="Drag">
         <div class="archive-canvas">
             <div class="archive-grid">
                 <a class="ar-item" href="work/threshold.html"><div class="frame"><img src="https://picsum.photos/seed/dayne-w1/800/533?grayscale" alt="From the Threshold series" loading="lazy" width="800" height="533" decoding="async"></div></a>
@@ -79,11 +86,11 @@
         <p class="archive-hint label">Drag to explore &mdash; click a frame to visit</p>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Flip.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
-    <script src="assets/js/main.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Flip.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
+    <script defer src="assets/js/main.js"></script>
 </body>
 </html>

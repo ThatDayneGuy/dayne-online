@@ -10,10 +10,15 @@
     <meta property="og:url" content="https://dayne.online/">
     <meta property="og:title" content="Dayne — Photographer &amp; Writer">
     <meta property="og:description" content="Photography portfolio and journal. Quiet photographs, occasional words.">
+    <meta property="og:image" content="https://picsum.photos/seed/dayne-hero/1200/630?grayscale">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="dayne.online">
-    <meta name="twitter:card" content="summary">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="canonical" href="https://dayne.online/">
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230c0c0c'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Helvetica' font-size='17' font-weight='700' fill='%23f3f2ef'%3ED%3C/text%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <meta name="theme-color" content="#f5f4f1">
 
     <script>
     (function () {
@@ -44,6 +49,8 @@
     </script>
 </head>
 <body>
+
+    <a class="skip-link" href="#main">Skip to content</a>
 
     <div class="loader" aria-hidden="true">
         <div class="loader-core">
@@ -89,7 +96,7 @@
         </div>
     </nav>
 
-    <main>
+    <main id="main" tabindex="-1">
         <!-- Hero -->
         <section class="hero">
             <h1 class="hero-title" data-hero-title>
@@ -97,7 +104,7 @@
             </h1>
             <div class="hero-meta">
                 <span class="label status"><span class="status-dot" aria-hidden="true"></span>test text test text</span>
-                <span class="label serif-i" style="text-transform: none; font-size: 1rem; letter-spacing: 0;">test text test text</span>
+                <span class="label serif-i hero-note">test text test text</span>
                 <span class="label">test text test text</span>
             </div>
             <span class="hero-scroll label" aria-hidden="true">Scroll</span>
@@ -111,7 +118,7 @@
 
         <!-- Statement -->
         <section class="section wrap">
-            <p class="label" data-reveal style="margin-bottom: 2rem;">test text</p>
+            <p class="label label-block" data-reveal>test text</p>
             <p class="statement" data-split-words>Test text test text test text test text test text <span class="serif-i">test text test text.</span></p>
             <p class="statement-foot" data-reveal>Test text test text test text test text test text.</p>
         </section>
@@ -120,7 +127,7 @@
         <section class="section wrap" data-shuffle>
             <div class="section-head" data-reveal>
                 <h2>Selected work</h2>
-                <a class="label" href="work.html" style="border-bottom: 1px solid currentColor; padding-bottom: 0.3em;">All work</a>
+                <a class="label label-link" href="work.html">All work</a>
             </div>
 
             <article class="feature">
@@ -178,7 +185,7 @@
         <section class="section wrap">
             <div class="section-head" data-reveal>
                 <h2>From the journal</h2>
-                <a class="label" href="journal.html" style="border-bottom: 1px solid currentColor; padding-bottom: 0.3em;">All entries</a>
+                <a class="label label-link" href="journal.html">All entries</a>
             </div>
 
             <div class="row-list" data-reveal>
@@ -226,11 +233,11 @@
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Flip.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
-    <script src="assets/js/main.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Flip.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
+    <script defer src="assets/js/main.js"></script>
 </body>
 </html>

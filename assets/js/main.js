@@ -9,7 +9,14 @@
   "use strict";
 
   var docEl = document.documentElement;
-  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var reduceMQ = window.matchMedia("(prefers-reduced-motion: reduce)");
+  var reduceMotion = reduceMQ.matches;
+  // Keep the flag live: gsap.matchMedia re-runs setups when the OS
+  // preference changes, and they must not read a stale value. This
+  // listener registers first, so it updates before mm callbacks fire.
+  if (reduceMQ.addEventListener) {
+    reduceMQ.addEventListener("change", function (e) { reduceMotion = e.matches; });
+  }
   var hasGsap = typeof window.gsap !== "undefined";
   var EASE = "expo.out";
 
@@ -39,22 +46,30 @@
      Prefer GSAP SplitText (free since 3.13: built-in masking + aria);
      fall back to the manual splitter if the plugin didn't load.
   ------------------------------------------------------------------ */
+  // Results are cached per element so a matchMedia re-run (e.g. the user
+  // toggling reduced motion off and on) never double-splits the DOM.
   function splitChars(el) {
+    if (el._splitChars) return el._splitChars;
     if (window.SplitText) {
       try {
-        return new SplitText(el, { type: "chars", mask: "chars" }).chars;
+        el._splitChars = new SplitText(el, { type: "chars", mask: "chars" }).chars;
+        return el._splitChars;
       } catch (e) { /* fall through to manual */ }
     }
-    return manualSplitChars(el);
+    el._splitChars = manualSplitChars(el);
+    return el._splitChars;
   }
 
   function splitWords(el) {
+    if (el._splitWords) return el._splitWords;
     if (window.SplitText) {
       try {
-        return new SplitText(el, { type: "words", mask: "words" }).words;
+        el._splitWords = new SplitText(el, { type: "words", mask: "words" }).words;
+        return el._splitWords;
       } catch (e) { /* fall through to manual */ }
     }
-    return manualSplitWords(el);
+    el._splitWords = manualSplitWords(el);
+    return el._splitWords;
   }
 
   function manualSplitChars(el) {
@@ -231,6 +246,8 @@
       });
     }
 
+    var navigating = false;
+
     document.addEventListener("click", function (e) {
       var link = e.target.closest("a");
       if (!link) return;
@@ -239,10 +256,22 @@
       if (/^(mailto:|tel:|https?:\/\/)/.test(href) && link.hostname !== location.hostname) return;
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
 
+      // Already mid-transition: swallow further clicks
+      if (navigating) { e.preventDefault(); return; }
+
+      // Links to the page we're already on: do nothing instead of
+      // playing a full wipe into an identical reload
+      var dest = new URL(link.href, location.href);
+      if (dest.pathname === location.pathname && dest.search === location.search) {
+        e.preventDefault();
+        return;
+      }
+
       // Tagged thumbnails morph into the next page's cover via the
       // View Transitions API where supported — skip the overlay and
       // let the browser carry the image across.
       if (link.hasAttribute("data-vt") && document.startViewTransition) {
+        navigating = true;
         var vtImg = link.querySelector("img");
         if (vtImg) vtImg.style.viewTransitionName = "cover";
         try {
@@ -253,6 +282,7 @@
       }
 
       e.preventDefault();
+      navigating = true;
       var n = frameNo() + 1;
       try {
         sessionStorage.setItem("fr", String(n));
@@ -272,6 +302,7 @@
     // Restore state when coming back via bfcache
     window.addEventListener("pageshow", function (e) {
       if (e.persisted) {
+        navigating = false;
         gsap.set(panel, { yPercent: 102 });
         docEl.classList.remove("pt-in");
       }
@@ -579,26 +610,43 @@
      On mobile / reduced motion / no JS it's a native swipe strip.
   ------------------------------------------------------------------ */
   function initHScroll() {
-    if (!hasGsap || !window.ScrollTrigger || reduceMotion) return;
-    if (window.matchMedia("(max-width: 760px)").matches) return;
-    document.querySelectorAll(".h-scroll").forEach(function (sec) {
-      var track = sec.querySelector(".h-track");
-      if (!track) return;
-      sec.classList.add("is-pinned");
-      gsap.to(track, {
-        x: function () { return -(track.scrollWidth - sec.clientWidth); },
-        ease: "none",
-        scrollTrigger: {
-          trigger: sec,
-          start: "top top",
-          end: function () { return "+=" + (track.scrollWidth - sec.clientWidth); },
-          pin: true,
-          anticipatePin: 1,
-          scrub: 1,
-          invalidateOnRefresh: true
-        }
-      });
-    });
+    if (!hasGsap || !window.ScrollTrigger || !gsap.matchMedia) return;
+    var secs = document.querySelectorAll(".h-scroll");
+    if (!secs.length) return;
+
+    // Own matchMedia context: crossing the 760px breakpoint (resize,
+    // device rotation) or toggling reduced motion re-evaluates the pin
+    // live — animations and pin-spacing are reverted automatically.
+    gsap.matchMedia().add(
+      "(min-width: 761px) and (prefers-reduced-motion: no-preference)",
+      function () {
+        secs.forEach(function (sec) {
+          var track = sec.querySelector(".h-track");
+          if (!track) return;
+          sec.classList.add("is-pinned");
+          gsap.to(track, {
+            x: function () { return -(track.scrollWidth - sec.clientWidth); },
+            ease: "none",
+            scrollTrigger: {
+              trigger: sec,
+              start: "top top",
+              end: function () { return "+=" + (track.scrollWidth - sec.clientWidth); },
+              pin: true,
+              anticipatePin: 1,
+              scrub: 1,
+              invalidateOnRefresh: true
+            }
+          });
+        });
+        return function () {
+          secs.forEach(function (sec) {
+            sec.classList.remove("is-pinned");
+            var track = sec.querySelector(".h-track");
+            if (track) gsap.set(track, { clearProps: "x" });
+          });
+        };
+      }
+    );
   }
 
   /* ------------------------------------------------------------------
@@ -838,16 +886,16 @@
 
     // Scroll-driven motion lives inside gsap.matchMedia so flipping the
     // OS reduced-motion preference reverts it live, not just on reload.
+    initHScroll(); // manages its own matchMedia (breakpoint + motion)
+
     if (hasGsap && gsap.matchMedia) {
       gsap.matchMedia().add("(prefers-reduced-motion: no-preference)", function () {
         initScrollAnimations();
-        initHScroll();
         initProgress();
         initVelocity();
       });
     } else {
       initScrollAnimations();
-      initHScroll();
       initProgress();
       initVelocity();
     }

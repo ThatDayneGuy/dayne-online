@@ -9,8 +9,13 @@
     <meta property="og:url" content="https://dayne.online/work.html">
     <meta property="og:title" content="Work — Dayne">
     <meta property="og:description" content="Selected photographic series by Dayne.">
+    <meta property="og:image" content="https://picsum.photos/seed/dayne-w1/1200/630?grayscale">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <link rel="canonical" href="https://dayne.online/work.html">
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230c0c0c'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Helvetica' font-size='17' font-weight='700' fill='%23f3f2ef'%3ED%3C/text%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <meta name="theme-color" content="#f5f4f1">
 
     <script>
     (function () {
@@ -27,6 +32,8 @@
     <link rel="stylesheet" href="assets/css/main.css">
 </head>
 <body>
+
+    <a class="skip-link" href="#main">Skip to content</a>
 
     <div class="transition" aria-hidden="true"><div class="panel"><span class="fr"></span></div></div>
     <div class="cursor" aria-hidden="true"><span class="cursor-label"></span></div>
@@ -59,7 +66,7 @@
         </div>
     </nav>
 
-    <main>
+    <main id="main" tabindex="-1">
         <section class="page-head wrap">
             <h1 data-title-reveal><span class="line">Work</span></h1>
             <p class="sub" data-reveal>Test text test text test text.</p>
@@ -69,14 +76,14 @@
             </div>
         </section>
 
-        <section class="wrap" style="padding-bottom: clamp(5rem, 12vw, 11rem);">
+        <section class="wrap section-end">
             <div class="work-grid">
                 <a class="work-card" href="work/threshold.html" data-cursor="View" data-vt>
                     <div class="frame" data-reveal-img>
                         <img src="https://picsum.photos/seed/dayne-w1/1600/1200?grayscale" alt="A doorway caught between light and shadow" loading="lazy" width="1600" height="1200" decoding="async" srcset="https://picsum.photos/seed/dayne-w1/800/600?grayscale 800w, https://picsum.photos/seed/dayne-w1/1600/1200?grayscale 1600w, https://picsum.photos/seed/dayne-w1/2400/1800?grayscale 2400w" sizes="(max-width: 760px) 100vw, 60vw">
                     </div>
                     <div class="work-card-info">
-                        <h3>Test text</h3>
+                        <h2>Test text</h2>
                         <span class="label">test text</span>
                     </div>
                 </a>
@@ -86,7 +93,7 @@
                         <img src="https://picsum.photos/seed/dayne-w4/1200/1600?grayscale" alt="A portrait lit by a single window" loading="lazy" width="1200" height="1600" decoding="async" srcset="https://picsum.photos/seed/dayne-w4/800/1067?grayscale 800w, https://picsum.photos/seed/dayne-w4/1600/2133?grayscale 1600w, https://picsum.photos/seed/dayne-w4/2400/3200?grayscale 2400w" sizes="(max-width: 760px) 100vw, 60vw">
                     </div>
                     <div class="work-card-info">
-                        <h3>Test text</h3>
+                        <h2>Test text</h2>
                         <span class="label">test text</span>
                     </div>
                 </a>
@@ -96,7 +103,7 @@
                         <img src="https://picsum.photos/seed/dayne-w3/1200/1600?grayscale" alt="A city street at night, blurred lights" loading="lazy" width="1200" height="1600" decoding="async" srcset="https://picsum.photos/seed/dayne-w3/800/1067?grayscale 800w, https://picsum.photos/seed/dayne-w3/1600/2133?grayscale 1600w, https://picsum.photos/seed/dayne-w3/2400/3200?grayscale 2400w" sizes="(max-width: 760px) 100vw, 60vw">
                     </div>
                     <div class="work-card-info">
-                        <h3>Test text</h3>
+                        <h2>Test text</h2>
                         <span class="label">test text</span>
                     </div>
                 </a>
@@ -106,7 +113,7 @@
                         <img src="https://picsum.photos/seed/dayne-w2/1600/1200?grayscale" alt="A still, empty landscape under flat light" loading="lazy" width="1600" height="1200" decoding="async" srcset="https://picsum.photos/seed/dayne-w2/800/600?grayscale 800w, https://picsum.photos/seed/dayne-w2/1600/1200?grayscale 1600w, https://picsum.photos/seed/dayne-w2/2400/1800?grayscale 2400w" sizes="(max-width: 760px) 100vw, 60vw">
                     </div>
                     <div class="work-card-info">
-                        <h3>Test text</h3>
+                        <h2>Test text</h2>
                         <span class="label">test text</span>
                     </div>
                 </a>
@@ -132,11 +139,11 @@
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Flip.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
-    <script src="assets/js/main.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Flip.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
+    <script defer src="assets/js/main.js"></script>
 </body>
 </html>

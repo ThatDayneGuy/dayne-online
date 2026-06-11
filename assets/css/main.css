@@ -62,6 +62,35 @@ ul, ol { list-style: none; }
 
 ::selection { background: var(--ink); color: var(--bg); }
 
+/* Keyboard focus: one consistent, theme-aware ring */
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+/* Skip link: invisible until focused, then drops in from the top */
+.skip-link {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 120;
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.8em 1.3em;
+  transform: translateY(calc(-100% - 1.5rem));
+  transition: transform 0.3s var(--ease);
+}
+
+.skip-link:focus-visible {
+  transform: none;
+  outline-offset: -5px;
+  outline-color: var(--bg);
+}
+
 /* Film-grain overlay, very faint */
 body::after {
   content: "";
@@ -116,6 +145,14 @@ body::after {
   letter-spacing: -0.02em;
   line-height: 1.1;
 }
+
+/* Spacing / inline-style replacements */
+.section-end { padding-bottom: clamp(5rem, 12vw, 11rem); }
+.pad-end-sm { padding-bottom: clamp(4rem, 8vw, 6rem); }
+.push-top { margin-top: clamp(5rem, 12vw, 10rem); }
+.label-block { display: block; margin-bottom: 2rem; }
+.label-link { border-bottom: 1px solid currentColor; padding-bottom: 0.3em; }
+.hero-note { text-transform: none; font-size: 1rem; letter-spacing: 0; }
 
 /* ==========================================================================
    Header
@@ -804,7 +841,7 @@ a [data-parallax] .frame img { transition: none; }
   padding-top: 0.9rem;
 }
 
-.work-card-info h3 {
+.work-card-info h2 {
   font-size: var(--text-lg);
   font-weight: 500;
   letter-spacing: -0.02em;
@@ -842,7 +879,7 @@ a [data-parallax] .frame img { transition: none; }
 .work-grid.is-sheet .work-card .frame { aspect-ratio: 3 / 2 !important; }
 
 .work-grid.is-sheet .work-card-info { padding-top: 0.6rem; }
-.work-grid.is-sheet .work-card-info h3 { font-size: var(--text-md); }
+.work-grid.is-sheet .work-card-info h2 { font-size: var(--text-md); }
 
 @media (max-width: 760px) {
   .work-grid.is-sheet .work-card { grid-column: span 6 !important; }
