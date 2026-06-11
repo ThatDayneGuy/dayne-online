@@ -221,34 +221,23 @@
       return;
     }
     var strip = overlay.querySelector(".strip");
-    var frEl = overlay.querySelector(".fr");
     if (!strip) return;
-
-    function frameNo() {
-      var n = 1;
-      try { n = parseInt(sessionStorage.getItem("fr") || "1", 10) || 1; } catch (e) {}
-      return n;
-    }
-
-    function stamp(n) {
-      if (frEl) frEl.textContent = "Dayne 400 · FR " + String(n).padStart(2, "0");
-    }
 
     function grain(to, duration) {
       gsap.to(docEl, { "--grain": to, duration: duration, ease: "power1.inOut", overwrite: "auto" });
     }
 
-    // Strip geometry in pixels (the strip is 210vh tall: frame+gap+frame).
-    // Computed per use so resizes between navigations stay correct.
+    // Strip geometry in pixels. The strip is 250vh tall: two 120vh
+    // frames (100vh opaque core + 10vh feathers) around a 10vh gap.
+    // Covered position is -10vh so the feathers sit outside the gate.
     function vh(n) { return window.innerHeight * (n / 100); }
 
     // Arriving mid-transition: wind the whole strip through the gate
     if (docEl.classList.contains("pt-in")) {
-      stamp(frameNo());
       gsap.set(docEl, { "--grain": 0.12 });
       grain(0.035, 1.2);
-      gsap.fromTo(strip, { y: 0 }, {
-        y: function () { return -vh(210); },
+      gsap.fromTo(strip, { y: -vh(10) }, {
+        y: function () { return -vh(250); },
         duration: 1,
         ease: "expo.inOut",
         delay: 0.06,
@@ -287,25 +276,17 @@
         navigating = true;
         var vtImg = link.querySelector("img");
         if (vtImg) vtImg.style.viewTransitionName = "cover";
-        try {
-          sessionStorage.setItem("vt", "1");
-          sessionStorage.setItem("fr", String(frameNo() + 1));
-        } catch (err) {}
+        try { sessionStorage.setItem("vt", "1"); } catch (err) {}
         return;
       }
 
       e.preventDefault();
       navigating = true;
-      var n = frameNo() + 1;
-      try {
-        sessionStorage.setItem("fr", String(n));
-        sessionStorage.setItem("pt", "1");
-      } catch (err) {}
-      stamp(n);
+      try { sessionStorage.setItem("pt", "1"); } catch (err) {}
       grain(0.12, 0.5);
       gsap.fromTo(strip, { y: vh(100) }, {
-        y: 0,
-        duration: 0.6,
+        y: function () { return -vh(10); },
+        duration: 0.65,
         ease: "expo.inOut",
         onComplete: function () {
           location.href = href;
