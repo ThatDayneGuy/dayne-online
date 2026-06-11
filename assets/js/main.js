@@ -116,73 +116,73 @@
     if (scrollHint) tl.fromTo(scrollHint, { opacity: 0 }, { opacity: 1, duration: 0.8 }, "-=0.5");
   }
 
-  function runPreloader() {
-    var pre = document.querySelector(".preloader");
+  function runIntro() {
+    // First visit: the page "develops" out of a paper-white sheet —
+    // loading is part of the hero, not a gate in front of it.
+    var overlay = document.querySelector(".develop-overlay");
     var isFirstVisit = false;
     try {
       isFirstVisit = !sessionStorage.getItem("visited");
     } catch (e) { /* storage unavailable */ }
 
-    if (!pre || !isFirstVisit || reduceMotion || !hasGsap) {
-      if (pre) pre.remove();
+    if (!overlay || !isFirstVisit || reduceMotion || !hasGsap) {
+      if (overlay) overlay.remove();
       docEl.classList.remove("preload");
       if (hasGsap && !reduceMotion) heroIntro(0.1);
       return;
     }
 
     try { sessionStorage.setItem("visited", "1"); } catch (e) {}
-    if (lenis) lenis.stop();
 
-    var countEl = pre.querySelector(".preloader-count");
-    var counter = { v: 0 };
-    var tl = gsap.timeline({
-      onComplete: function () {
-        pre.remove();
-        docEl.classList.remove("preload");
-        if (lenis) lenis.start();
-      }
-    });
-
-    tl.to(counter, {
-      v: 100,
-      duration: 1.6,
-      ease: "power2.inOut",
-      onUpdate: function () {
-        if (countEl) countEl.textContent = String(Math.round(counter.v)).padStart(3, "0");
-      }
-    });
-    tl.to(pre, {
-      clipPath: "inset(0 0 100% 0)",
+    gsap.to(overlay, {
+      opacity: 0,
       duration: 1,
-      ease: "expo.inOut",
-      onStart: function () {
-        heroIntro(0.55);
+      ease: "power2.inOut",
+      delay: 0.15,
+      onComplete: function () {
+        overlay.remove();
+        docEl.classList.remove("preload");
       }
     });
+    heroIntro(0.3);
   }
 
   /* ------------------------------------------------------------------
      Page transitions (wipe out on internal links, wipe in on arrival)
   ------------------------------------------------------------------ */
   function initTransitions() {
+    // Frame advance: one dark frame slides up through the viewport on the
+    // way out, and continues up and away on arrival — like winding film.
+    // A mono counter ticks the session's frame number in the corner.
     var overlay = document.querySelector(".transition");
     if (!overlay || !hasGsap || reduceMotion) {
       docEl.classList.remove("pt-in");
       return;
     }
-    var panels = overlay.querySelectorAll("span");
+    var panel = overlay.querySelector(".panel");
+    var frEl = overlay.querySelector(".fr");
 
-    // Arriving mid-transition: sweep the cover away
+    function frameNo() {
+      var n = 1;
+      try { n = parseInt(sessionStorage.getItem("fr") || "1", 10) || 1; } catch (e) {}
+      return n;
+    }
+
+    function stamp(n) {
+      if (frEl) frEl.textContent = "FR " + String(n).padStart(2, "0");
+    }
+
+    // Arriving mid-transition: the frame keeps moving up and off
     if (docEl.classList.contains("pt-in")) {
-      gsap.to(panels, {
-        scaleY: 0,
-        transformOrigin: "top",
-        duration: 0.85,
+      stamp(frameNo());
+      gsap.to(panel, {
+        yPercent: -102,
+        duration: 0.75,
         ease: "expo.inOut",
-        stagger: 0.06,
-        delay: 0.1,
+        delay: 0.08,
         onComplete: function () {
           docEl.classList.remove("pt-in");
+          gsap.set(panel, { yPercent: 102 });
         }
       });
     }
@@ -196,13 +196,16 @@
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
 
       e.preventDefault();
-      try { sessionStorage.setItem("pt", "1"); } catch (err) {}
-      gsap.to(panels, {
-        scaleY: 1,
-        transformOrigin: "bottom",
-        duration: 0.7,
+      var n = frameNo() + 1;
+      try {
+        sessionStorage.setItem("fr", String(n));
+        sessionStorage.setItem("pt", "1");
+      } catch (err) {}
+      stamp(n);
+      gsap.fromTo(panel, { yPercent: 102 }, {
+        yPercent: 0,
+        duration: 0.6,
         ease: "expo.inOut",
-        stagger: 0.06,
         onComplete: function () {
           location.href = href;
         }
@@ -212,7 +215,7 @@
     // Restore state when coming back via bfcache
     window.addEventListener("pageshow", function (e) {
       if (e.persisted) {
-        gsap.set(panels, { scaleY: 0 });
+        gsap.set(panel, { yPercent: 102 });
         docEl.classList.remove("pt-in");
       }
     });
@@ -235,20 +238,30 @@
       });
     });
 
-    // Image curtain reveal
+    // Develop reveal: images surface from blank paper, exposure settling in,
+    // like a print in the tray. Filter/opacity only, so it coexists with
+    // parallax (transforms) and the CSS hover zoom.
     document.querySelectorAll("[data-reveal-img]").forEach(function (frame) {
       var img = frame.querySelector("img");
-      var tl = gsap.timeline({
+      if (!img) return;
+      var hasParallax = frame.hasAttribute("data-parallax");
+      var fromVars = { opacity: 0, filter: "grayscale(1) brightness(1.55) contrast(0.45)" };
+      var toVars = {
+        opacity: 1,
+        filter: "grayscale(1) brightness(1) contrast(1.04)",
+        duration: 1.5,
+        ease: "power2.inOut",
+        onComplete: function () {
+          // hand filter/opacity back to the stylesheet (same end values)
+          gsap.set(img, { clearProps: hasParallax ? "filter,opacity" : "filter,opacity,scale" });
+        },
         scrollTrigger: { trigger: frame, start: "top 85%", once: true }
-      });
-      tl.fromTo(frame,
-        { clipPath: "inset(100% 0% 0% 0%)" },
-        { clipPath: "inset(0% 0% 0% 0%)", duration: 1.3, ease: "expo.inOut" }
-      );
-      // parallax owns the img transform on those frames — don't fight it
-      if (img && !frame.hasAttribute("data-parallax")) {
-        tl.from(img, { scale: 1.25, duration: 1.3, ease: "expo.inOut" }, 0);
+      };
+      if (!hasParallax) {
+        fromVars.scale = 1.08;
+        toVars.scale = 1;
       }
+      gsap.fromTo(img, fromVars, toVars);
     });
 
     // Parallax drift inside frames
@@ -410,6 +423,75 @@
   }
 
   /* ------------------------------------------------------------------
+     Journal category filter
+     Chips are built from the tags present in the list, so adding a new
+     category to a row is all it takes. With fewer than two distinct
+     categories the bar removes itself.
+  ------------------------------------------------------------------ */
+  function initJournalFilter() {
+    var bar = document.querySelector("[data-filter]");
+    if (!bar) return;
+    var rows = Array.prototype.slice.call(document.querySelectorAll(".row-list .row"));
+    var cats = [];
+
+    rows.forEach(function (row) {
+      var tagEl = row.querySelector(".tag");
+      var cat = tagEl ? tagEl.textContent.trim() : "";
+      row.setAttribute("data-cat", cat);
+      if (cat && cats.indexOf(cat) === -1) cats.push(cat);
+    });
+
+    if (cats.length < 2) {
+      bar.remove();
+      return;
+    }
+
+    function makeChip(label, cat) {
+      var chip = document.createElement("button");
+      chip.className = "chip";
+      chip.type = "button";
+      chip.textContent = label;
+      chip.setAttribute("aria-pressed", cat === "" ? "true" : "false");
+      chip.addEventListener("click", function () {
+        bar.querySelectorAll(".chip").forEach(function (c) { c.setAttribute("aria-pressed", "false"); });
+        chip.setAttribute("aria-pressed", "true");
+        rows.forEach(function (row) {
+          var show = !cat || row.getAttribute("data-cat") === cat;
+          row.classList.toggle("is-hidden", !show);
+        });
+        if (hasGsap && !reduceMotion) {
+          gsap.fromTo(rows.filter(function (r) { return !r.classList.contains("is-hidden"); }),
+            { opacity: 0, y: 16 },
+            { opacity: 1, y: 0, duration: 0.5, ease: EASE, stagger: 0.05 });
+        }
+        if (window.ScrollTrigger) ScrollTrigger.refresh();
+      });
+      bar.appendChild(chip);
+    }
+
+    makeChip("All", "");
+    cats.forEach(function (cat) { makeChip(cat, cat); });
+  }
+
+  /* ------------------------------------------------------------------
+     Reading progress hairline (journal entries)
+  ------------------------------------------------------------------ */
+  function initProgress() {
+    var bar = document.querySelector(".progress");
+    if (!bar || !hasGsap || !window.ScrollTrigger || reduceMotion) return;
+    gsap.to(bar, {
+      scaleX: 1,
+      ease: "none",
+      scrollTrigger: {
+        trigger: document.body,
+        start: "top top",
+        end: "bottom bottom",
+        scrub: 0.3
+      }
+    });
+  }
+
+  /* ------------------------------------------------------------------
      Back to top
   ------------------------------------------------------------------ */
   function initToTop() {
@@ -425,10 +507,12 @@
      Boot
   ------------------------------------------------------------------ */
   function init() {
-    runPreloader();
+    runIntro();
     initTransitions();
     initScrollAnimations();
     initListPreview();
+    initJournalFilter();
+    initProgress();
     initCursor();
     initMenu();
     initToTop();
