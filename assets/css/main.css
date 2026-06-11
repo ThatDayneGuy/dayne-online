@@ -9,6 +9,7 @@
   --muted: #71706c;
   --line: rgba(16, 16, 16, 0.14);
   --accent: #c84b31; /* one accent, one job: the availability dot */
+  --glass-tint: rgba(245, 244, 241, 0.4);
 
   --sans: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --serif: "Instrument Serif", Georgia, serif;
@@ -33,6 +34,7 @@
   --ink: #f3f2ef;
   --muted: #8d8c88;
   --line: rgba(243, 242, 239, 0.16);
+  --glass-tint: rgba(12, 12, 12, 0.45);
 }
 
 /* ---------- Reset ---------- */
@@ -401,10 +403,11 @@ body::after {
 
 .loader .label { color: #8d8c88; }
 
-/* Film-strip transition: a strip of two soft-edged frames winds through
-   the gate. Each frame feathers out at its leading and trailing edges —
-   a motion-blur sweep rather than a hard black card — and the frame gap
-   carries a light leak that flashes across as it passes. */
+/* Liquid-glass transition: a frosted pane sweeps through the gate.
+   The page stays visible through it, heavily blurred — the page swap
+   happens behind the glass, and the new page sharpens as the pane
+   exits. Edges feather out via a mask; a faint luminous gradient at
+   each edge gives the glass its specular quality. */
 .transition {
   position: fixed;
   inset: 0;
@@ -418,41 +421,32 @@ body::after {
   left: 0;
   right: 0;
   top: 0;
-  height: 250vh; /* feathered frame + gap + feathered frame */
-  display: flex;
-  flex-direction: column;
+  height: 140vh; /* 100vh frosted core + 20vh feathered edges */
   transform: translateY(100vh); /* parked below the gate */
+  background:
+    linear-gradient(to bottom,
+      rgba(255, 255, 255, 0.3),
+      rgba(255, 255, 255, 0) 18%,
+      rgba(255, 255, 255, 0) 82%,
+      rgba(255, 255, 255, 0.3)),
+    var(--glass-tint);
+  -webkit-backdrop-filter: blur(28px) brightness(1.06);
+  backdrop-filter: blur(28px) brightness(1.06);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 14%, #000 86%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 14%, #000 86%, transparent);
 }
 
-/* Each frame is taller than the viewport: a 100vh opaque core with
-   10vh feathers above and below, so the screen is fully covered while
-   the soft edges stay in motion outside it. */
-.transition .cell {
-  position: relative;
-  flex: none;
-  height: 120vh;
-  background: linear-gradient(to bottom,
-    rgba(12, 12, 12, 0) 0%,
-    rgba(12, 12, 12, 0.7) 4.5%,
-    #0c0c0c 8.3%,
-    #0c0c0c 91.7%,
-    rgba(12, 12, 12, 0.7) 95.5%,
-    rgba(12, 12, 12, 0) 100%);
+/* Without backdrop-filter the glass can't conceal the page swap —
+   fall back to a near-opaque pane in the page color */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .transition .strip {
+    background: var(--bg);
+    opacity: 0.98;
+  }
 }
 
-/* Frame gap: mostly transparent, carrying a soft light leak that the
-   adjacent feathers blend into */
-.transition .gap {
-  flex: none;
-  height: 10vh;
-  background: radial-gradient(ellipse 70% 100% at 50% 50%,
-              rgba(243, 242, 239, 0.75),
-              rgba(243, 242, 239, 0) 75%);
-}
-
-/* Arriving mid-transition: the gate starts covered by the first
-   frame's opaque core */
-.pt-in .transition .strip { transform: translateY(-10vh); }
+/* Arriving mid-transition: the gate starts covered by the frosted core */
+.pt-in .transition .strip { transform: translateY(-20vh); }
 
 /* ==========================================================================
    Hero

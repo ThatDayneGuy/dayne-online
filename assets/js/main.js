@@ -210,11 +210,10 @@
      Page transitions (wipe out on internal links, wipe in on arrival)
   ------------------------------------------------------------------ */
   function initTransitions() {
-    // Film advance: a two-frame strip winds vertically through the gate.
-    // Leaving, the first frame covers the screen; arriving, the strip
-    // keeps winding — frame out, light-leak gap flashes past, second
-    // frame through — until the new page is exposed. Grain swells while
-    // the strip is in motion.
+    // Liquid glass: a frosted pane sweeps vertically through the gate.
+    // Leaving, the page dissolves into frost; the swap happens behind
+    // the glass; arriving, the pane continues through and the new page
+    // sharpens out of it. Grain swells while the pane is in motion.
     var overlay = document.querySelector(".transition");
     if (!overlay || !hasGsap || reduceMotion) {
       docEl.classList.remove("pt-in");
@@ -227,18 +226,19 @@
       gsap.to(docEl, { "--grain": to, duration: duration, ease: "power1.inOut", overwrite: "auto" });
     }
 
-    // Strip geometry in pixels. The strip is 250vh tall: two 120vh
-    // frames (100vh opaque core + 10vh feathers) around a 10vh gap.
-    // Covered position is -10vh so the feathers sit outside the gate.
+    // Pane geometry in pixels. The glass pane is 140vh tall: a 100vh
+    // frosted core with 20vh feathered edges. Covered position is
+    // -20vh so the feathers sit outside the gate.
     function vh(n) { return window.innerHeight * (n / 100); }
 
-    // Arriving mid-transition: wind the whole strip through the gate
+    // Arriving mid-transition: the pane slides on through, and the new
+    // page sharpens out of the frost behind it
     if (docEl.classList.contains("pt-in")) {
       gsap.set(docEl, { "--grain": 0.12 });
       grain(0.035, 1.2);
-      gsap.fromTo(strip, { y: -vh(10) }, {
-        y: function () { return -vh(250); },
-        duration: 1,
+      gsap.fromTo(strip, { y: -vh(20) }, {
+        y: function () { return -vh(140); },
+        duration: 0.9,
         ease: "expo.inOut",
         delay: 0.06,
         onComplete: function () {
@@ -285,7 +285,7 @@
       try { sessionStorage.setItem("pt", "1"); } catch (err) {}
       grain(0.12, 0.5);
       gsap.fromTo(strip, { y: vh(100) }, {
-        y: function () { return -vh(10); },
+        y: function () { return -vh(20); },
         duration: 0.65,
         ease: "expo.inOut",
         onComplete: function () {
