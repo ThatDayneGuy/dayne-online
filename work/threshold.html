@@ -16,13 +16,15 @@
     (function () {
         var d = document.documentElement;
         d.classList.add("js");
+        try { if (localStorage.getItem("bg") === "dark") { d.classList.add("theme-dark"); } } catch (e) {}
         try { if (sessionStorage.getItem("pt")) { d.classList.add("pt-in"); sessionStorage.removeItem("pt"); } } catch (e) {}
+        try { if (sessionStorage.getItem("vt")) { d.classList.add("vt-in"); sessionStorage.removeItem("vt"); } } catch (e) {}
     })();
     </script>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@100..900&family=Fragment+Mono&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="preload" href="../assets/fonts/archivo-normal-100-900.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="../assets/fonts/fragment-mono-normal-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="../assets/css/fonts.css">
     <link rel="stylesheet" href="../assets/css/main.css">
 </head>
 <body>
@@ -34,9 +36,11 @@
         <a class="logo" href="../index.html">Dayne<sup>&copy;</sup></a>
         <nav class="site-nav" aria-label="Primary">
             <a href="../work.html" aria-current="page">Work</a>
+            <a href="../archive.html">Archive</a>
             <a href="../journal.html">Journal</a>
             <a href="../about.html">About</a>
         </nav>
+        <button class="bg-toggle" type="button" aria-label="Toggle background" aria-pressed="false">&#9681;</button>
         <button class="menu-toggle" aria-expanded="false" aria-controls="menu" aria-label="Open menu">
             <span></span><span></span>
         </button>
@@ -46,6 +50,7 @@
         <ol>
             <li><a href="../index.html"><span>Index</span></a></li>
             <li><a href="../work.html"><span>Work</span></a></li>
+            <li><a href="../archive.html"><span>Archive</span></a></li>
             <li><a href="../journal.html"><span>Journal</span></a></li>
             <li><a href="../about.html"><span>About</span></a></li>
         </ol>
@@ -68,37 +73,47 @@
 
         <div class="project-cover wrap">
             <div class="frame" data-reveal-img data-parallax>
-                <img src="https://picsum.photos/seed/dayne-w1/2400/1350?grayscale" alt="A doorway caught between light and shadow" fetchpriority="high">
+                <img src="https://picsum.photos/seed/dayne-w1/2400/1350?grayscale" alt="A doorway caught between light and shadow" fetchpriority="high" width="2400" height="1350" decoding="async" srcset="https://picsum.photos/seed/dayne-w1/800/450?grayscale 800w, https://picsum.photos/seed/dayne-w1/1600/900?grayscale 1600w, https://picsum.photos/seed/dayne-w1/2400/1350?grayscale 2400w" sizes="100vw">
             </div>
         </div>
+
+        <section class="h-scroll" aria-label="Series film strip">
+            <div class="h-track">
+                <div class="h-item"><div class="frame"><img src="https://picsum.photos/seed/dayne-t6/1600/1067?grayscale" alt="Photograph from this series" loading="lazy" width="1600" height="1067" decoding="async" srcset="https://picsum.photos/seed/dayne-t6/800/534?grayscale 800w, https://picsum.photos/seed/dayne-t6/1600/1067?grayscale 1600w, https://picsum.photos/seed/dayne-t6/2400/1600?grayscale 2400w" sizes="(max-width: 760px) 100vw, 60vw"></div></div>
+                <div class="h-item tall"><div class="frame"><img src="https://picsum.photos/seed/dayne-t7/1200/1600?grayscale" alt="Photograph from this series" loading="lazy" width="1200" height="1600" decoding="async" srcset="https://picsum.photos/seed/dayne-t7/800/1067?grayscale 800w, https://picsum.photos/seed/dayne-t7/1600/2133?grayscale 1600w, https://picsum.photos/seed/dayne-t7/2400/3200?grayscale 2400w" sizes="(max-width: 760px) 100vw, 60vw"></div></div>
+                <div class="h-item"><div class="frame"><img src="https://picsum.photos/seed/dayne-t8/1600/1067?grayscale" alt="Photograph from this series" loading="lazy" width="1600" height="1067" decoding="async" srcset="https://picsum.photos/seed/dayne-t8/800/534?grayscale 800w, https://picsum.photos/seed/dayne-t8/1600/1067?grayscale 1600w, https://picsum.photos/seed/dayne-t8/2400/1600?grayscale 2400w" sizes="(max-width: 760px) 100vw, 60vw"></div></div>
+                <div class="h-item tall"><div class="frame"><img src="https://picsum.photos/seed/dayne-t9/1200/1600?grayscale" alt="Photograph from this series" loading="lazy" width="1200" height="1600" decoding="async" srcset="https://picsum.photos/seed/dayne-t9/800/1067?grayscale 800w, https://picsum.photos/seed/dayne-t9/1600/2133?grayscale 1600w, https://picsum.photos/seed/dayne-t9/2400/3200?grayscale 2400w" sizes="(max-width: 760px) 100vw, 60vw"></div></div>
+                <div class="h-item"><div class="frame"><img src="https://picsum.photos/seed/dayne-t10/1600/1067?grayscale" alt="Photograph from this series" loading="lazy" width="1600" height="1067" decoding="async" srcset="https://picsum.photos/seed/dayne-t10/800/534?grayscale 800w, https://picsum.photos/seed/dayne-t10/1600/1067?grayscale 1600w, https://picsum.photos/seed/dayne-t10/2400/1600?grayscale 2400w" sizes="(max-width: 760px) 100vw, 60vw"></div></div>
+            </div>
+        </section>
 
         <div class="project-body wrap">
             <p class="project-note" data-split-words>Test text test text test text test text test text <span class="serif-i">test text test text.</span></p>
 
             <div class="left" data-reveal-img data-parallax>
-                <div class="frame"><img src="https://picsum.photos/seed/dayne-t1/1600/1200?grayscale" alt="An open door spilling light into a dark hallway" loading="lazy"></div>
+                <div class="frame"><img src="https://picsum.photos/seed/dayne-t1/1600/1200?grayscale" alt="An open door spilling light into a dark hallway" loading="lazy" width="1600" height="1200" decoding="async" srcset="https://picsum.photos/seed/dayne-t1/800/600?grayscale 800w, https://picsum.photos/seed/dayne-t1/1600/1200?grayscale 1600w, https://picsum.photos/seed/dayne-t1/2400/1800?grayscale 2400w" sizes="(max-width: 760px) 100vw, 60vw"></div>
             </div>
 
             <div class="small-right" data-reveal-img data-parallax>
-                <div class="frame"><img src="https://picsum.photos/seed/dayne-t2/1200/1600?grayscale" alt="A figure paused at the edge of a doorway" loading="lazy"></div>
+                <div class="frame"><img src="https://picsum.photos/seed/dayne-t2/1200/1600?grayscale" alt="A figure paused at the edge of a doorway" loading="lazy" width="1200" height="1600" decoding="async" srcset="https://picsum.photos/seed/dayne-t2/800/1067?grayscale 800w, https://picsum.photos/seed/dayne-t2/1600/2133?grayscale 1600w, https://picsum.photos/seed/dayne-t2/2400/3200?grayscale 2400w" sizes="(max-width: 760px) 100vw, 60vw"></div>
             </div>
 
             <div class="full" data-reveal-img data-parallax>
-                <div class="frame"><img src="https://picsum.photos/seed/dayne-t3/2400/1350?grayscale" alt="A long corridor of repeating doorframes" loading="lazy"></div>
+                <div class="frame"><img src="https://picsum.photos/seed/dayne-t3/2400/1350?grayscale" alt="A long corridor of repeating doorframes" loading="lazy" width="2400" height="1350" decoding="async" srcset="https://picsum.photos/seed/dayne-t3/800/450?grayscale 800w, https://picsum.photos/seed/dayne-t3/1600/900?grayscale 1600w, https://picsum.photos/seed/dayne-t3/2400/1350?grayscale 2400w" sizes="100vw"></div>
             </div>
 
             <div class="small-left" data-reveal-img data-parallax>
-                <div class="frame"><img src="https://picsum.photos/seed/dayne-t4/1200/1600?grayscale" alt="Shadow falling across a threshold" loading="lazy"></div>
+                <div class="frame"><img src="https://picsum.photos/seed/dayne-t4/1200/1600?grayscale" alt="Shadow falling across a threshold" loading="lazy" width="1200" height="1600" decoding="async" srcset="https://picsum.photos/seed/dayne-t4/800/1067?grayscale 800w, https://picsum.photos/seed/dayne-t4/1600/2133?grayscale 1600w, https://picsum.photos/seed/dayne-t4/2400/3200?grayscale 2400w" sizes="(max-width: 760px) 100vw, 60vw"></div>
             </div>
 
             <div class="right" data-reveal-img data-parallax>
-                <div class="frame"><img src="https://picsum.photos/seed/dayne-t5/1600/1200?grayscale" alt="A gate left ajar at dusk" loading="lazy"></div>
+                <div class="frame"><img src="https://picsum.photos/seed/dayne-t5/1600/1200?grayscale" alt="A gate left ajar at dusk" loading="lazy" width="1600" height="1200" decoding="async" srcset="https://picsum.photos/seed/dayne-t5/800/600?grayscale 800w, https://picsum.photos/seed/dayne-t5/1600/1200?grayscale 1600w, https://picsum.photos/seed/dayne-t5/2400/1800?grayscale 2400w" sizes="(max-width: 760px) 100vw, 60vw"></div>
             </div>
         </div>
 
         <div class="wrap" style="padding-bottom: clamp(4rem, 8vw, 6rem);">
             <a class="related" href="../journal/on-waiting.html" data-reveal>
-                <div class="thumb"><div class="frame"><img src="https://picsum.photos/seed/dayne-j1/400/400?grayscale" alt="" loading="lazy"></div></div>
+                <div class="thumb"><div class="frame"><img src="https://picsum.photos/seed/dayne-j1/400/400?grayscale" alt="" loading="lazy" width="400" height="400" decoding="async"></div></div>
                 <div>
                     <span class="label">From the journal</span>
                     <span class="rel-title">Test text</span>
@@ -122,6 +137,7 @@
             <span>&copy; 2026 Dayne — All rights reserved</span>
             <nav aria-label="Footer">
                 <a href="../work.html">Work</a>
+                <a href="../archive.html">Archive</a>
                 <a href="../journal.html">Journal</a>
                 <a href="../about.html">About</a>
                 <a href="mailto:me@dayne.online">Email</a>
@@ -130,8 +146,10 @@
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Flip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
     <script src="../assets/js/main.js"></script>
 </body>

@@ -8,6 +8,7 @@
   --ink: #101010;
   --muted: #71706c;
   --line: rgba(16, 16, 16, 0.14);
+  --accent: #c84b31; /* one accent, one job: the availability dot */
 
   --sans: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --serif: "Instrument Serif", Georgia, serif;
@@ -126,10 +127,19 @@ body::after {
   z-index: 40;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: clamp(1.25rem, 3vw, 2.25rem);
   padding: clamp(1.1rem, 2.5vw, 1.6rem) var(--pad);
   mix-blend-mode: difference;
   color: #f3f2ef;
+}
+
+.site-header .logo { margin-right: auto; }
+
+.bg-toggle {
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  line-height: 1;
+  padding: 0.2rem;
 }
 
 .site-header a, .site-header button { color: #f3f2ef; }
@@ -379,6 +389,22 @@ body::after {
   transform-origin: right center;
 }
 
+/* Availability dot — the accent color's only job */
+.status { display: inline-flex; align-items: center; gap: 0.6em; }
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
 @media (max-width: 760px) {
   .hero-scroll { display: none; }
 }
@@ -598,15 +624,8 @@ a:hover .frame img, a:focus-visible .frame img { transform: scale(1.05); }
   color: var(--muted);
 }
 
-/* Category filter (journal index) — chips appear once >1 category exists */
-.filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
-}
-
-.filter-bar .chip {
+/* Chips (journal filter, work view toggle) */
+.chip {
   font-family: var(--mono);
   font-size: var(--text-xs);
   text-transform: uppercase;
@@ -618,12 +637,20 @@ a:hover .frame img, a:focus-visible .frame img { transform: scale(1.05); }
   transition: color 0.3s ease, background 0.3s ease, border-color 0.3s ease;
 }
 
-.filter-bar .chip:hover { color: var(--ink); border-color: var(--ink); }
+.chip:hover { color: var(--ink); border-color: var(--ink); }
 
-.filter-bar .chip[aria-pressed="true"] {
+.chip[aria-pressed="true"] {
   color: var(--bg);
   background: var(--ink);
   border-color: var(--ink);
+}
+
+/* Category filter (journal index) — chips appear once >1 category exists */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
 }
 
 .row.is-hidden { display: none; }
@@ -721,6 +748,81 @@ a:hover .frame img, a:focus-visible .frame img { transform: scale(1.05); }
 
 @media (max-width: 760px) {
   .work-grid .work-card { grid-column: 1 / -1 !important; margin-top: 0 !important; }
+}
+
+/* View toggle on the work index */
+.view-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 2rem;
+}
+
+/* Contact-sheet mode: dense uniform thumbnails */
+.work-grid.is-sheet { gap: var(--gap); }
+
+.work-grid.is-sheet .work-card {
+  grid-column: span 3 !important;
+  margin-top: 0 !important;
+}
+
+.work-grid.is-sheet .work-card .frame { aspect-ratio: 3 / 2 !important; }
+
+.work-grid.is-sheet .work-card-info { padding-top: 0.6rem; }
+.work-grid.is-sheet .work-card-info h3 { font-size: var(--text-md); }
+
+@media (max-width: 760px) {
+  .work-grid.is-sheet .work-card { grid-column: span 6 !important; }
+}
+
+/* ==========================================================================
+   Horizontal film strip (series pages)
+   Native swipe strip by default; JS pins it on desktop so the page's
+   scroll axis flips to horizontal inside the work.
+   ========================================================================== */
+
+.h-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  margin-top: clamp(3rem, 7vw, 6rem);
+}
+
+.h-scroll.is-pinned {
+  overflow: hidden;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+}
+
+.h-track {
+  display: flex;
+  gap: var(--gap);
+  padding-inline: var(--pad);
+  width: max-content;
+  will-change: transform;
+}
+
+.h-item {
+  flex: 0 0 auto;
+  width: clamp(16rem, 38vw, 34rem);
+  scroll-snap-align: center;
+}
+
+.h-item .frame { aspect-ratio: 3 / 2; }
+.h-item.tall { width: clamp(12rem, 26vw, 24rem); }
+.h-item.tall .frame { aspect-ratio: 3 / 4; }
+
+.h-scroll { counter-reset: hfr; }
+
+.h-item::after {
+  counter-increment: hfr;
+  content: "FR " counter(hfr, decimal-leading-zero);
+  display: block;
+  margin-top: 0.65rem;
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  color: var(--muted);
 }
 
 /* ==========================================================================
@@ -1118,6 +1220,148 @@ a:hover .frame img, a:focus-visible .frame img { transform: scale(1.05); }
 
 @media (hover: hover) and (pointer: fine) {
   .js .cursor { display: flex; }
+}
+
+/* ==========================================================================
+   Idle screensaver (home)
+   ========================================================================== */
+
+.screensaver {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: #0c0c0c;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.8s ease, visibility 0s 0.8s;
+}
+
+.screensaver.is-on {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.8s ease;
+}
+
+.screensaver .frame {
+  position: absolute;
+  inset: clamp(1.5rem, 5vw, 4rem);
+  background: transparent;
+}
+
+.screensaver .frame img { object-fit: contain; }
+
+.screensaver .label {
+  position: absolute;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #8d8c88;
+}
+
+/* ==========================================================================
+   Archive — infinite drag canvas
+   Plain scrollable grid by default; html.archive-mode (set by JS)
+   converts it to a fixed, draggable, endlessly tiling field.
+   ========================================================================== */
+
+.archive-page main { padding-top: clamp(7rem, 16vh, 11rem); }
+
+.archive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: var(--gap);
+  padding: var(--pad);
+}
+
+.ar-item .frame { aspect-ratio: 3 / 2; }
+.ar-item:nth-child(3n) .frame { aspect-ratio: 3 / 4; }
+
+.archive-grid { counter-reset: ar; }
+
+.ar-item::after {
+  counter-increment: ar;
+  content: "FR " counter(ar, decimal-leading-zero);
+  display: block;
+  margin-top: 0.5rem;
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.archive-hint {
+  display: none;
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+}
+
+.archive-mode { overflow: hidden; }
+.archive-mode body { overflow: hidden; height: 100vh; }
+
+.archive-mode main {
+  position: fixed;
+  inset: 0;
+  padding: 0;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.archive-mode main:active { cursor: grabbing; }
+
+.archive-mode .archive-canvas { position: absolute; inset: 0; }
+
+.archive-mode .archive-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: max-content;
+  grid-template-columns: repeat(4, clamp(14rem, 22vw, 22rem));
+  gap: clamp(2rem, 4vw, 4rem);
+  padding: clamp(1rem, 2vw, 2rem);
+  will-change: transform;
+}
+
+.archive-mode .ar-item img { pointer-events: none; }
+
+.archive-mode .archive-hint { display: block; }
+
+/* ==========================================================================
+   Continuity transitions (View Transitions API, progressive)
+   Clicking a tagged work thumbnail morphs it into the series cover on
+   the next page (Darker Lights / Exo Ape pattern). Browsers without
+   cross-document support fall back to the frame-advance overlay.
+   ========================================================================== */
+
+@view-transition {
+  navigation: auto;
+}
+
+/* The destination cover only takes the shared name when the arrival
+   was initiated from a tagged thumbnail (html.vt-in, set inline). */
+.vt-in .project-cover .frame img { view-transition-name: cover; }
+
+::view-transition-old(cover),
+::view-transition-new(cover) {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  animation-duration: 0.65s;
+}
+
+::view-transition-group(cover) {
+  animation-duration: 0.65s;
+  animation-timing-function: cubic-bezier(0.65, 0.05, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-image-pair(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) { animation: none !important; }
 }
 
 /* ==========================================================================
