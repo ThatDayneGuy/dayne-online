@@ -22,12 +22,14 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@100..900&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@100..900&family=Fragment+Mono&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/main.css">
 </head>
 <body>
 
-    <div class="transition" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="progress" aria-hidden="true"></div>
+
+    <div class="transition" aria-hidden="true"><div class="panel"><span class="fr"></span></div></div>
     <div class="cursor" aria-hidden="true"><span class="cursor-label"></span></div>
 
     <header class="site-header">
@@ -63,6 +65,12 @@
                 <p class="post-date" data-reveal>22 January 2026 — 5 min read</p>
             </header>
 
+            <figure class="post-hero">
+                <div class="frame" data-reveal-img data-parallax>
+                    <img src="https://picsum.photos/seed/dayne-j2-cover/2400/1030?grayscale" alt="Cover photograph for this entry">
+                </div>
+            </figure>
+
             <div class="post-body">
                 <p data-reveal>Test text test text test text test text test text test text test text. Test text test text test text test text test text. Test text test text test text test text test text test text.</p>
 
@@ -74,7 +82,7 @@
 
                 <p data-reveal>Test text test text test text test text test text test text test text. Test text test text test text test text test text. Test text test text test text test text test text test text.</p>
 
-                <figure data-reveal>
+                <figure class="full-bleed" data-reveal>
                     <div class="frame" data-reveal-img>
                         <img src="https://picsum.photos/seed/dayne-j2/1400/1000?grayscale" alt="High-contrast light falling across an interior wall" loading="lazy">
                     </div>
@@ -85,6 +93,15 @@
 
                 <p data-reveal>Test text test text test text test text test text test text test text. Test text test text test text test text test text. Test text test text test text test text test text test text.</p>
             </div>
+
+            <a class="related" href="../work/stillness.html" data-reveal>
+                <div class="thumb"><div class="frame"><img src="https://picsum.photos/seed/dayne-w2/400/400?grayscale" alt="" loading="lazy"></div></div>
+                <div>
+                    <span class="label">From the series</span>
+                    <span class="rel-title">Test text</span>
+                </div>
+                <span class="rel-arrow" aria-hidden="true">&rarr;</span>
+            </a>
 
             <footer class="post-foot">
                 <a href="../journal.html">&larr; Back to journal</a>

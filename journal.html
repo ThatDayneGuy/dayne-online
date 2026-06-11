@@ -22,12 +22,12 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@100..900&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@100..900&family=Fragment+Mono&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/main.css">
 </head>
 <body>
 
-    <div class="transition" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="transition" aria-hidden="true"><div class="panel"><span class="fr"></span></div></div>
     <div class="cursor" aria-hidden="true"><span class="cursor-label"></span></div>
 
     <header class="site-header">
@@ -62,6 +62,8 @@
         </section>
 
         <section class="wrap" style="padding-bottom: clamp(5rem, 12vw, 11rem);">
+            <div class="filter-bar" data-filter aria-label="Filter entries"></div>
+
             <div class="row-list" data-reveal>
                 <a class="row" href="journal/on-waiting.html" data-img="https://picsum.photos/seed/dayne-j1/600/750?grayscale">
                     <span class="date">14 Mar 2026</span>
