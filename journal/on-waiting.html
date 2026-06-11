@@ -16,13 +16,14 @@
     (function () {
         var d = document.documentElement;
         d.classList.add("js");
+        try { if (localStorage.getItem("bg") === "dark") { d.classList.add("theme-dark"); } } catch (e) {}
         try { if (sessionStorage.getItem("pt")) { d.classList.add("pt-in"); sessionStorage.removeItem("pt"); } } catch (e) {}
     })();
     </script>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@100..900&family=Fragment+Mono&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="preload" href="../assets/fonts/archivo-normal-100-900.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="../assets/fonts/fragment-mono-normal-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="../assets/css/fonts.css">
     <link rel="stylesheet" href="../assets/css/main.css">
 </head>
 <body>
@@ -36,9 +37,11 @@
         <a class="logo" href="../index.html">Dayne<sup>&copy;</sup></a>
         <nav class="site-nav" aria-label="Primary">
             <a href="../work.html">Work</a>
+            <a href="../archive.html">Archive</a>
             <a href="../journal.html" aria-current="page">Journal</a>
             <a href="../about.html">About</a>
         </nav>
+        <button class="bg-toggle" type="button" aria-label="Toggle background" aria-pressed="false">&#9681;</button>
         <button class="menu-toggle" aria-expanded="false" aria-controls="menu" aria-label="Open menu">
             <span></span><span></span>
         </button>
@@ -48,6 +51,7 @@
         <ol>
             <li><a href="../index.html"><span>Index</span></a></li>
             <li><a href="../work.html"><span>Work</span></a></li>
+            <li><a href="../archive.html"><span>Archive</span></a></li>
             <li><a href="../journal.html"><span>Journal</span></a></li>
             <li><a href="../about.html"><span>About</span></a></li>
         </ol>
@@ -67,7 +71,7 @@
 
             <figure class="post-hero">
                 <div class="frame" data-reveal-img data-parallax>
-                    <img src="https://picsum.photos/seed/dayne-j1-cover/2400/1030?grayscale" alt="Cover photograph for this entry">
+                    <img src="https://picsum.photos/seed/dayne-j1-cover/2400/1030?grayscale" alt="Cover photograph for this entry" width="2400" height="1030" decoding="async" srcset="https://picsum.photos/seed/dayne-j1-cover/800/343?grayscale 800w, https://picsum.photos/seed/dayne-j1-cover/1600/687?grayscale 1600w, https://picsum.photos/seed/dayne-j1-cover/2400/1030?grayscale 2400w" sizes="100vw">
                 </div>
             </figure>
 
@@ -82,7 +86,7 @@
 
                 <figure class="full-bleed" data-reveal>
                     <div class="frame" data-reveal-img>
-                        <img src="https://picsum.photos/seed/dayne-j1/1400/1000?grayscale" alt="An empty street corner in flat morning light" loading="lazy">
+                        <img src="https://picsum.photos/seed/dayne-j1/1400/1000?grayscale" alt="An empty street corner in flat morning light" loading="lazy" width="1400" height="1000" decoding="async" srcset="https://picsum.photos/seed/dayne-j1/800/571?grayscale 800w, https://picsum.photos/seed/dayne-j1/1600/1143?grayscale 1600w, https://picsum.photos/seed/dayne-j1/2400/1714?grayscale 2400w" sizes="(max-width: 760px) 100vw, 60vw">
                     </div>
                     <figcaption>test text test text.</figcaption>
                 </figure>
@@ -95,7 +99,7 @@
             </div>
 
             <a class="related" href="../work/threshold.html" data-reveal>
-                <div class="thumb"><div class="frame"><img src="https://picsum.photos/seed/dayne-w1/400/400?grayscale" alt="" loading="lazy"></div></div>
+                <div class="thumb"><div class="frame"><img src="https://picsum.photos/seed/dayne-w1/400/400?grayscale" alt="" loading="lazy" width="400" height="400" decoding="async"></div></div>
                 <div>
                     <span class="label">From the series</span>
                     <span class="rel-title">Test text</span>
@@ -119,6 +123,7 @@
             <span>&copy; 2026 Dayne — All rights reserved</span>
             <nav aria-label="Footer">
                 <a href="../work.html">Work</a>
+                <a href="../archive.html">Archive</a>
                 <a href="../journal.html">Journal</a>
                 <a href="../about.html">About</a>
                 <a href="mailto:me@dayne.online">Email</a>
@@ -127,8 +132,10 @@
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Flip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
     <script src="../assets/js/main.js"></script>
 </body>

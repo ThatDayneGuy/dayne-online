@@ -31,11 +31,33 @@
   if (hasGsap && window.ScrollTrigger) {
     gsap.registerPlugin(ScrollTrigger);
   }
+  if (hasGsap && window.SplitText) gsap.registerPlugin(SplitText);
+  if (hasGsap && window.Flip) gsap.registerPlugin(Flip);
 
   /* ------------------------------------------------------------------
      Text splitting helpers
+     Prefer GSAP SplitText (free since 3.13: built-in masking + aria);
+     fall back to the manual splitter if the plugin didn't load.
   ------------------------------------------------------------------ */
   function splitChars(el) {
+    if (window.SplitText) {
+      try {
+        return new SplitText(el, { type: "chars", mask: "chars" }).chars;
+      } catch (e) { /* fall through to manual */ }
+    }
+    return manualSplitChars(el);
+  }
+
+  function splitWords(el) {
+    if (window.SplitText) {
+      try {
+        return new SplitText(el, { type: "words", mask: "words" }).words;
+      } catch (e) { /* fall through to manual */ }
+    }
+    return manualSplitWords(el);
+  }
+
+  function manualSplitChars(el) {
     // Splits each .line inside el (or el itself) into per-char spans.
     var lines = el.querySelectorAll(".line");
     if (!lines.length) lines = [el];
@@ -63,7 +85,7 @@
     return chars;
   }
 
-  function splitWords(el) {
+  function manualSplitWords(el) {
     var nodes = Array.prototype.slice.call(el.childNodes);
     el.textContent = "";
     var inners = [];
@@ -194,6 +216,19 @@
       if (!href || href.charAt(0) === "#" || link.target === "_blank") return;
       if (/^(mailto:|tel:|https?:\/\/)/.test(href) && link.hostname !== location.hostname) return;
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+      // Tagged thumbnails morph into the next page's cover via the
+      // View Transitions API where supported — skip the overlay and
+      // let the browser carry the image across.
+      if (link.hasAttribute("data-vt") && document.startViewTransition) {
+        var vtImg = link.querySelector("img");
+        if (vtImg) vtImg.style.viewTransitionName = "cover";
+        try {
+          sessionStorage.setItem("vt", "1");
+          sessionStorage.setItem("fr", String(frameNo() + 1));
+        } catch (err) {}
+        return;
+      }
 
       e.preventDefault();
       var n = frameNo() + 1;
@@ -492,6 +527,266 @@
   }
 
   /* ------------------------------------------------------------------
+     Scroll-velocity response: scrolling fast softens the page like
+     film motion blur; it settles crisp when you stop. (Siena Film,
+     Takamitsu Motoyoshi.)
+  ------------------------------------------------------------------ */
+  function initVelocity() {
+    if (!lenis || !hasGsap) return;
+    var main = document.querySelector("main");
+    if (!main || main.hasAttribute("data-archive")) return;
+    var state = { b: 0 };
+    function apply() {
+      main.style.filter = state.b > 0.04 ? "blur(" + state.b.toFixed(2) + "px)" : "";
+    }
+    lenis.on("scroll", function (e) {
+      var t = Math.min(Math.abs(e.velocity || 0) / 40, 1) * 1.6;
+      gsap.to(state, { b: t, duration: 0.3, ease: "power1.out", overwrite: true, onUpdate: apply });
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     Horizontal film strip inside series pages: scroll axis flips to
+     horizontal while the strip is pinned (Wyttenbach, Dalla, Lévesque).
+     On mobile / reduced motion / no JS it's a native swipe strip.
+  ------------------------------------------------------------------ */
+  function initHScroll() {
+    if (!hasGsap || !window.ScrollTrigger || reduceMotion) return;
+    if (window.matchMedia("(max-width: 760px)").matches) return;
+    document.querySelectorAll(".h-scroll").forEach(function (sec) {
+      var track = sec.querySelector(".h-track");
+      if (!track) return;
+      sec.classList.add("is-pinned");
+      gsap.to(track, {
+        x: function () { return -(track.scrollWidth - sec.clientWidth); },
+        ease: "none",
+        scrollTrigger: {
+          trigger: sec,
+          start: "top top",
+          end: function () { return "+=" + (track.scrollWidth - sec.clientWidth); },
+          pin: true,
+          scrub: 1,
+          invalidateOnRefresh: true
+        }
+      });
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     Work index: editorial grid <-> contact sheet, animated with Flip
+  ------------------------------------------------------------------ */
+  function initWorkToggle() {
+    var bar = document.querySelector(".view-toggle");
+    var grid = document.querySelector(".work-grid");
+    if (!bar || !grid) return;
+    var chips = bar.querySelectorAll(".chip");
+
+    function setView(view, animate) {
+      chips.forEach(function (c) {
+        c.setAttribute("aria-pressed", String(c.getAttribute("data-view") === view));
+      });
+      var state = null;
+      if (animate && hasGsap && window.Flip && !reduceMotion) {
+        state = Flip.getState(grid.querySelectorAll(".work-card"));
+      }
+      grid.classList.toggle("is-sheet", view === "sheet");
+      if (state) {
+        Flip.from(state, { duration: 0.8, ease: "expo.inOut", absolute: true, stagger: 0.02 });
+      }
+      if (window.ScrollTrigger) ScrollTrigger.refresh();
+      try { localStorage.setItem("workview", view); } catch (e) {}
+    }
+
+    chips.forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        setView(chip.getAttribute("data-view"), true);
+      });
+    });
+
+    var saved = null;
+    try { saved = localStorage.getItem("workview"); } catch (e) {}
+    if (saved === "sheet") setView("sheet", false);
+  }
+
+  /* ------------------------------------------------------------------
+     Idle screensaver (Jack Davison, Marcus Eriksson): after 45s of
+     stillness the work starts performing by itself; any input wakes.
+  ------------------------------------------------------------------ */
+  function initScreensaver() {
+    var ss = document.querySelector(".screensaver");
+    if (!ss) return;
+    if (!hasGsap || reduceMotion) { ss.remove(); return; }
+    var img = ss.querySelector("img");
+    var srcs = Array.prototype.map.call(
+      document.querySelectorAll("main .frame img"),
+      function (i) { return i.currentSrc || i.src; }
+    ).filter(Boolean);
+    if (!img || srcs.length < 2) { ss.remove(); return; }
+
+    var IDLE_MS = 45000;
+    var timer = null, cycle = null, idx = 0, on = false;
+
+    function step() {
+      idx = (idx + 1) % srcs.length;
+      img.src = srcs[idx];
+      gsap.fromTo(img,
+        { opacity: 0, filter: "grayscale(1) brightness(1.5) contrast(0.5)" },
+        { opacity: 1, filter: "grayscale(1) brightness(1) contrast(1.04)", duration: 1.4, ease: "power2.inOut" });
+    }
+
+    function wake() {
+      if (!on) return;
+      on = false;
+      ss.classList.remove("is-on");
+      clearInterval(cycle);
+      if (lenis) lenis.start();
+    }
+
+    function sleep() {
+      if (on || docEl.classList.contains("menu-open")) return;
+      on = true;
+      ss.classList.add("is-on");
+      if (lenis) lenis.stop();
+      step();
+      cycle = setInterval(step, 4000);
+    }
+
+    function reset() {
+      wake();
+      clearTimeout(timer);
+      timer = setTimeout(sleep, IDLE_MS);
+    }
+
+    ["pointermove", "pointerdown", "keydown", "wheel", "touchstart", "scroll"].forEach(function (ev) {
+      window.addEventListener(ev, reset, { passive: true });
+    });
+    reset();
+  }
+
+  /* ------------------------------------------------------------------
+     Archive: infinite drag canvas (Unseen Studio pattern, DOM-only).
+     The grid is cloned into a 3x3 tile field; dragging/wheeling moves
+     a virtual offset that wraps seamlessly. Without JS (or with
+     reduced motion) the page stays a plain scrollable grid.
+  ------------------------------------------------------------------ */
+  function initArchive() {
+    var root = document.querySelector("[data-archive]");
+    if (!root) return;
+    var canvas = root.querySelector(".archive-canvas");
+    var grid = root.querySelector(".archive-grid");
+    if (!canvas || !grid || !hasGsap || reduceMotion) return;
+    if (window.matchMedia("(max-width: 600px)").matches) return; // small screens keep the scroll grid
+
+    docEl.classList.add("archive-mode");
+    if (lenis) lenis.stop();
+
+    var tiles = [grid];
+    for (var i = 0; i < 8; i++) {
+      var clone = grid.cloneNode(true);
+      clone.setAttribute("aria-hidden", "true");
+      clone.querySelectorAll("a").forEach(function (a) { a.tabIndex = -1; });
+      canvas.appendChild(clone);
+      tiles.push(clone);
+    }
+
+    var gw = 0, gh = 0;
+    var pos = { x: 0, y: 0 }, target = { x: 0, y: 0 };
+
+    function mod(n, m) { return ((n % m) + m) % m; }
+
+    function render() {
+      if (!gw || !gh) return;
+      var bx = mod(pos.x, gw) - gw;
+      var by = mod(pos.y, gh) - gh;
+      for (var r = 0; r < 3; r++) {
+        for (var c = 0; c < 3; c++) {
+          tiles[r * 3 + c].style.transform =
+            "translate3d(" + (bx + c * gw) + "px," + (by + r * gh) + "px,0)";
+        }
+      }
+    }
+
+    function measure() {
+      gw = grid.offsetWidth;
+      gh = grid.offsetHeight;
+      render();
+    }
+
+    gsap.ticker.add(function () {
+      pos.x += (target.x - pos.x) * 0.085;
+      pos.y += (target.y - pos.y) * 0.085;
+      render();
+    });
+
+    var dragging = false, sx = 0, sy = 0, tx0 = 0, ty0 = 0, moved = 0;
+    root.addEventListener("pointerdown", function (e) {
+      dragging = true; moved = 0;
+      sx = e.clientX; sy = e.clientY;
+      tx0 = target.x; ty0 = target.y;
+    });
+    window.addEventListener("pointermove", function (e) {
+      if (!dragging) return;
+      var dx = e.clientX - sx, dy = e.clientY - sy;
+      moved = Math.max(moved, Math.abs(dx) + Math.abs(dy));
+      target.x = tx0 + dx * 1.25;
+      target.y = ty0 + dy * 1.25;
+    });
+    window.addEventListener("pointerup", function () { dragging = false; });
+    // a drag should never count as a click on a tile link
+    root.addEventListener("click", function (e) {
+      if (moved > 6) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
+    window.addEventListener("wheel", function (e) {
+      target.x -= e.deltaX;
+      target.y -= e.deltaY;
+    }, { passive: true });
+
+    window.addEventListener("resize", measure);
+    window.addEventListener("load", measure);
+    measure();
+  }
+
+  /* ------------------------------------------------------------------
+     Per-visit variation (Marcus Eriksson): featured work reshuffles
+     on every load, then frame indices renumber to match.
+  ------------------------------------------------------------------ */
+  function initShuffle() {
+    var wrap = document.querySelector("[data-shuffle]");
+    if (!wrap) return;
+    var items = Array.prototype.slice.call(wrap.querySelectorAll(":scope > .feature"));
+    if (items.length < 2) return;
+    for (var i = items.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = items[i]; items[i] = items[j]; items[j] = t;
+    }
+    items.forEach(function (el, n) {
+      wrap.appendChild(el);
+      var idx = el.querySelector(".index");
+      if (idx) idx.textContent = idx.textContent.replace(/№\s*\d+/, "№ " + String(n + 1).padStart(2, "0"));
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     Background toggle (Ottografie): paper-white <-> near-black, so
+     photographs can be judged on either ground. Persisted.
+  ------------------------------------------------------------------ */
+  function initBgToggle() {
+    var btn = document.querySelector(".bg-toggle");
+    if (!btn) return;
+    function sync() {
+      btn.setAttribute("aria-pressed", String(docEl.classList.contains("theme-dark")));
+    }
+    btn.addEventListener("click", function () {
+      docEl.classList.toggle("theme-dark");
+      try {
+        localStorage.setItem("bg", docEl.classList.contains("theme-dark") ? "dark" : "light");
+      } catch (e) {}
+      sync();
+    });
+    sync();
+  }
+
+  /* ------------------------------------------------------------------
      Back to top
   ------------------------------------------------------------------ */
   function initToTop() {
@@ -507,12 +802,32 @@
      Boot
   ------------------------------------------------------------------ */
   function init() {
+    initShuffle();      // reorder before any animation reads the DOM
+    initWorkToggle();   // restore saved view before triggers measure
     runIntro();
     initTransitions();
-    initScrollAnimations();
+
+    // Scroll-driven motion lives inside gsap.matchMedia so flipping the
+    // OS reduced-motion preference reverts it live, not just on reload.
+    if (hasGsap && gsap.matchMedia) {
+      gsap.matchMedia().add("(prefers-reduced-motion: no-preference)", function () {
+        initScrollAnimations();
+        initHScroll();
+        initProgress();
+        initVelocity();
+      });
+    } else {
+      initScrollAnimations();
+      initHScroll();
+      initProgress();
+      initVelocity();
+    }
+
     initListPreview();
     initJournalFilter();
-    initProgress();
+    initScreensaver();
+    initArchive();
+    initBgToggle();
     initCursor();
     initMenu();
     initToTop();

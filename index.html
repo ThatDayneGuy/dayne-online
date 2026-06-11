@@ -19,6 +19,7 @@
     (function () {
         var d = document.documentElement;
         d.classList.add("js");
+        try { if (localStorage.getItem("bg") === "dark") { d.classList.add("theme-dark"); } } catch (e) {}
         try {
             if (sessionStorage.getItem("pt")) { d.classList.add("pt-in"); sessionStorage.removeItem("pt"); }
             if (!sessionStorage.getItem("visited")) { d.classList.add("preload"); }
@@ -26,9 +27,9 @@
     })();
     </script>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@100..900&family=Fragment+Mono&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="preload" href="assets/fonts/archivo-normal-100-900.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="assets/fonts/fragment-mono-normal-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="assets/css/fonts.css">
     <link rel="stylesheet" href="assets/css/main.css">
 
     <script type="application/ld+json">
@@ -53,9 +54,11 @@
         <a class="logo" href="index.html">Dayne<sup>&copy;</sup></a>
         <nav class="site-nav" aria-label="Primary">
             <a href="work.html">Work</a>
+            <a href="archive.html">Archive</a>
             <a href="journal.html">Journal</a>
             <a href="about.html">About</a>
         </nav>
+        <button class="bg-toggle" type="button" aria-label="Toggle background" aria-pressed="false">&#9681;</button>
         <button class="menu-toggle" aria-expanded="false" aria-controls="menu" aria-label="Open menu">
             <span></span><span></span>
         </button>
@@ -65,6 +68,7 @@
         <ol>
             <li><a href="index.html"><span>Index</span></a></li>
             <li><a href="work.html"><span>Work</span></a></li>
+            <li><a href="archive.html"><span>Archive</span></a></li>
             <li><a href="journal.html"><span>Journal</span></a></li>
             <li><a href="about.html"><span>About</span></a></li>
         </ol>
@@ -81,7 +85,7 @@
                 <span class="line">Dayne</span>
             </h1>
             <div class="hero-meta">
-                <span class="label">test text test text</span>
+                <span class="label status"><span class="status-dot" aria-hidden="true"></span>test text test text</span>
                 <span class="label serif-i" style="text-transform: none; font-size: 1rem; letter-spacing: 0;">test text test text</span>
                 <span class="label">test text test text</span>
             </div>
@@ -90,7 +94,7 @@
 
         <div class="hero-figure" data-scale-in>
             <div class="frame" data-parallax>
-                <img src="https://picsum.photos/seed/dayne-hero/2400/1350?grayscale" alt="Wide monochrome landscape photograph" fetchpriority="high">
+                <img src="https://picsum.photos/seed/dayne-hero/2400/1350?grayscale" alt="Wide monochrome landscape photograph" fetchpriority="high" width="2400" height="1350" decoding="async" srcset="https://picsum.photos/seed/dayne-hero/800/450?grayscale 800w, https://picsum.photos/seed/dayne-hero/1600/900?grayscale 1600w, https://picsum.photos/seed/dayne-hero/2400/1350?grayscale 2400w" sizes="100vw">
             </div>
         </div>
 
@@ -102,16 +106,16 @@
         </section>
 
         <!-- Selected work -->
-        <section class="section wrap">
+        <section class="section wrap" data-shuffle>
             <div class="section-head" data-reveal>
                 <h2>Selected work</h2>
                 <a class="label" href="work.html" style="border-bottom: 1px solid currentColor; padding-bottom: 0.3em;">All work</a>
             </div>
 
             <article class="feature">
-                <a class="feature-media" href="work/threshold.html" data-cursor="View" aria-label="View Threshold series">
+                <a class="feature-media" href="work/threshold.html" data-cursor="View" data-vt aria-label="View Threshold series">
                     <div class="frame" data-reveal-img data-parallax>
-                        <img src="https://picsum.photos/seed/dayne-w1/1600/1200?grayscale" alt="A doorway caught between light and shadow" loading="lazy">
+                        <img src="https://picsum.photos/seed/dayne-w1/1600/1200?grayscale" alt="A doorway caught between light and shadow" loading="lazy" width="1600" height="1200" decoding="async" srcset="https://picsum.photos/seed/dayne-w1/800/600?grayscale 800w, https://picsum.photos/seed/dayne-w1/1600/1200?grayscale 1600w, https://picsum.photos/seed/dayne-w1/2400/1800?grayscale 2400w" sizes="(max-width: 760px) 100vw, 60vw">
                     </div>
                 </a>
                 <div class="feature-info" data-reveal>
@@ -123,9 +127,9 @@
             </article>
 
             <article class="feature">
-                <a class="feature-media" href="work/stillness.html" data-cursor="View" aria-label="View Stillness series">
+                <a class="feature-media" href="work/stillness.html" data-cursor="View" data-vt aria-label="View Stillness series">
                     <div class="frame" data-reveal-img data-parallax>
-                        <img src="https://picsum.photos/seed/dayne-w2/1600/1200?grayscale" alt="A still, empty landscape under flat light" loading="lazy">
+                        <img src="https://picsum.photos/seed/dayne-w2/1600/1200?grayscale" alt="A still, empty landscape under flat light" loading="lazy" width="1600" height="1200" decoding="async" srcset="https://picsum.photos/seed/dayne-w2/800/600?grayscale 800w, https://picsum.photos/seed/dayne-w2/1600/1200?grayscale 1600w, https://picsum.photos/seed/dayne-w2/2400/1800?grayscale 2400w" sizes="(max-width: 760px) 100vw, 60vw">
                     </div>
                 </a>
                 <div class="feature-info" data-reveal>
@@ -137,9 +141,9 @@
             </article>
 
             <article class="feature">
-                <a class="feature-media" href="work/soft-static.html" data-cursor="View" aria-label="View Soft Static series">
+                <a class="feature-media" href="work/soft-static.html" data-cursor="View" data-vt aria-label="View Soft Static series">
                     <div class="frame" data-reveal-img data-parallax>
-                        <img src="https://picsum.photos/seed/dayne-w3/1600/1200?grayscale" alt="A city street at night, blurred lights" loading="lazy">
+                        <img src="https://picsum.photos/seed/dayne-w3/1600/1200?grayscale" alt="A city street at night, blurred lights" loading="lazy" width="1600" height="1200" decoding="async" srcset="https://picsum.photos/seed/dayne-w3/800/600?grayscale 800w, https://picsum.photos/seed/dayne-w3/1600/1200?grayscale 1600w, https://picsum.photos/seed/dayne-w3/2400/1800?grayscale 2400w" sizes="(max-width: 760px) 100vw, 60vw">
                     </div>
                 </a>
                 <div class="feature-info" data-reveal>
@@ -188,6 +192,11 @@
 
     <div class="list-preview" aria-hidden="true"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt=""></div>
 
+    <div class="screensaver" aria-hidden="true">
+        <div class="frame"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt=""></div>
+        <span class="label">Idle &mdash; move to wake</span>
+    </div>
+
     <footer class="site-footer">
         <a class="footer-cta" href="mailto:me@dayne.online">
             <span class="label">test text test text</span>
@@ -197,6 +206,7 @@
             <span>&copy; 2026 Dayne — All rights reserved</span>
             <nav aria-label="Footer">
                 <a href="work.html">Work</a>
+                <a href="archive.html">Archive</a>
                 <a href="journal.html">Journal</a>
                 <a href="about.html">About</a>
                 <a href="mailto:me@dayne.online">Email</a>
@@ -205,8 +215,10 @@
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Flip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
     <script src="assets/js/main.js"></script>
 </body>
