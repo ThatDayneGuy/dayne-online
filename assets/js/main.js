@@ -238,19 +238,23 @@
       gsap.to(docEl, { "--grain": to, duration: duration, ease: "power1.inOut", overwrite: "auto" });
     }
 
+    // Strip geometry in pixels (the strip is 210vh tall: frame+gap+frame).
+    // Computed per use so resizes between navigations stay correct.
+    function vh(n) { return window.innerHeight * (n / 100); }
+
     // Arriving mid-transition: wind the whole strip through the gate
     if (docEl.classList.contains("pt-in")) {
       stamp(frameNo());
       gsap.set(docEl, { "--grain": 0.12 });
       grain(0.035, 1.2);
-      gsap.to(strip, {
-        y: "-210vh",
+      gsap.fromTo(strip, { y: 0 }, {
+        y: function () { return -vh(210); },
         duration: 1,
         ease: "expo.inOut",
         delay: 0.06,
         onComplete: function () {
           docEl.classList.remove("pt-in");
-          gsap.set(strip, { y: "100vh" });
+          gsap.set(strip, { y: vh(100) });
         }
       });
     }
@@ -299,8 +303,8 @@
       } catch (err) {}
       stamp(n);
       grain(0.12, 0.5);
-      gsap.fromTo(strip, { y: "100vh" }, {
-        y: "0vh",
+      gsap.fromTo(strip, { y: vh(100) }, {
+        y: 0,
         duration: 0.6,
         ease: "expo.inOut",
         onComplete: function () {
@@ -313,7 +317,7 @@
     window.addEventListener("pageshow", function (e) {
       if (e.persisted) {
         navigating = false;
-        gsap.set(strip, { y: "100vh" });
+        gsap.set(strip, { y: vh(100) });
         gsap.set(docEl, { "--grain": 0.035 });
         docEl.classList.remove("pt-in");
       }
