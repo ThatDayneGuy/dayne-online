@@ -139,34 +139,56 @@
   }
 
   function runIntro() {
-    // First visit: the page "develops" out of a paper-white sheet —
-    // loading is part of the hero, not a gate in front of it.
-    var overlay = document.querySelector(".develop-overlay");
+    // First visit: a darkroom-timer dial sweeps while the page develops.
+    var loader = document.querySelector(".loader");
     var isFirstVisit = false;
     try {
       isFirstVisit = !sessionStorage.getItem("visited");
     } catch (e) { /* storage unavailable */ }
 
-    if (!overlay || !isFirstVisit || reduceMotion || !hasGsap) {
-      if (overlay) overlay.remove();
+    if (!loader || !isFirstVisit || reduceMotion || !hasGsap) {
+      if (loader) loader.remove();
       docEl.classList.remove("preload");
       if (hasGsap && !reduceMotion) heroIntro(0.1);
       return;
     }
 
     try { sessionStorage.setItem("visited", "1"); } catch (e) {}
+    if (lenis) lenis.stop();
 
-    gsap.to(overlay, {
-      opacity: 0,
-      duration: 1,
-      ease: "power2.inOut",
-      delay: 0.15,
+    var core = loader.querySelector(".loader-core");
+    var ring = loader.querySelector(".ring");
+    var pct = loader.querySelector(".loader-pct");
+    var CIRC = 339.292; // matches the stroke-dasharray in CSS
+    var progress = { v: 0 };
+
+    var tl = gsap.timeline({
       onComplete: function () {
-        overlay.remove();
+        loader.remove();
         docEl.classList.remove("preload");
+        if (lenis) lenis.start();
       }
     });
-    heroIntro(0.3);
+
+    tl.to(progress, {
+      v: 100,
+      duration: 1.9,
+      ease: "power2.inOut",
+      onUpdate: function () {
+        if (pct) pct.textContent = String(Math.round(progress.v));
+        if (ring) ring.style.strokeDashoffset = String(CIRC * (1 - progress.v / 100));
+      }
+    });
+    // dial winds down, then the room lights come up on the hero
+    tl.to(core, { scale: 0.92, opacity: 0, duration: 0.45, ease: "power2.in" }, "+=0.15");
+    tl.to(loader, {
+      opacity: 0,
+      duration: 0.7,
+      ease: "power2.inOut",
+      onStart: function () {
+        heroIntro(0.25);
+      }
+    }, "<0.2");
   }
 
   /* ------------------------------------------------------------------

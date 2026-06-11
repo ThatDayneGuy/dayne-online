@@ -45,7 +45,18 @@
 </head>
 <body>
 
-    <div class="develop-overlay" aria-hidden="true"></div>
+    <div class="loader" aria-hidden="true">
+        <div class="loader-core">
+            <div class="loader-dial">
+                <svg viewBox="0 0 120 120" aria-hidden="true">
+                    <circle class="track" cx="60" cy="60" r="54"></circle>
+                    <circle class="ring" cx="60" cy="60" r="54"></circle>
+                </svg>
+                <span class="loader-pct">0</span>
+            </div>
+            <span class="label">Developing</span>
+        </div>
+    </div>
 
     <div class="transition" aria-hidden="true"><div class="panel"><span class="fr"></span></div></div>
     <div class="cursor" aria-hidden="true"><span class="cursor-label"></span></div>
