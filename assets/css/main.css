@@ -401,9 +401,10 @@ body::after {
 
 .loader .label { color: #8d8c88; }
 
-/* Film-strip transition: a strip of two frames winds through the gate.
-   Rebate text is printed vertically along the edge, and the frame gap
-   carries a light leak that flashes across the screen as it passes. */
+/* Film-strip transition: a strip of two soft-edged frames winds through
+   the gate. Each frame feathers out at its leading and trailing edges —
+   a motion-blur sweep rather than a hard black card — and the frame gap
+   carries a light leak that flashes across as it passes. */
 .transition {
   position: fixed;
   inset: 0;
@@ -417,45 +418,41 @@ body::after {
   left: 0;
   right: 0;
   top: 0;
-  height: 210vh; /* frame + gap + frame */
+  height: 250vh; /* feathered frame + gap + feathered frame */
   display: flex;
   flex-direction: column;
   transform: translateY(100vh); /* parked below the gate */
 }
 
+/* Each frame is taller than the viewport: a 100vh opaque core with
+   10vh feathers above and below, so the screen is fully covered while
+   the soft edges stay in motion outside it. */
 .transition .cell {
   position: relative;
   flex: none;
-  height: 100vh;
-  background: #0c0c0c;
+  height: 120vh;
+  background: linear-gradient(to bottom,
+    rgba(12, 12, 12, 0) 0%,
+    rgba(12, 12, 12, 0.7) 4.5%,
+    #0c0c0c 8.3%,
+    #0c0c0c 91.7%,
+    rgba(12, 12, 12, 0.7) 95.5%,
+    rgba(12, 12, 12, 0) 100%);
 }
 
-/* Frame gap: mostly transparent, carrying a soft light leak */
+/* Frame gap: mostly transparent, carrying a soft light leak that the
+   adjacent feathers blend into */
 .transition .gap {
   flex: none;
   height: 10vh;
   background: radial-gradient(ellipse 70% 100% at 50% 50%,
-              rgba(243, 242, 239, 0.85),
+              rgba(243, 242, 239, 0.75),
               rgba(243, 242, 239, 0) 75%);
 }
 
-/* Rebate text printed along the film edge */
-.transition .fr {
-  position: absolute;
-  top: 50%;
-  right: clamp(2rem, 3.6vw, 3.2rem);
-  transform: translateY(-50%);
-  writing-mode: vertical-rl;
-  z-index: 2;
-  font-family: var(--mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(243, 242, 239, 0.55);
-}
-
-/* Arriving mid-transition: the gate starts covered by the first frame */
-.pt-in .transition .strip { transform: translateY(0); }
+/* Arriving mid-transition: the gate starts covered by the first
+   frame's opaque core */
+.pt-in .transition .strip { transform: translateY(-10vh); }
 
 /* ==========================================================================
    Hero
