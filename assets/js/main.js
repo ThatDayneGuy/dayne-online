@@ -555,15 +555,21 @@
   ------------------------------------------------------------------ */
   function initVelocity() {
     if (!lenis || !hasGsap) return;
-    var main = document.querySelector("main");
-    if (!main || main.hasAttribute("data-archive")) return;
+    if (document.querySelector("[data-archive]")) return;
+    // The blur is applied to the images via a CSS variable — never to an
+    // ancestor element. A filter on an ancestor (e.g. <main>) makes it
+    // the containing block for position:fixed, which detaches
+    // ScrollTrigger's pinned sections mid-scroll (blank-screen bug).
     var state = { b: 0 };
-    function apply() {
-      main.style.filter = state.b > 0.04 ? "blur(" + state.b.toFixed(2) + "px)" : "";
-    }
+    var ease = gsap.quickTo(state, "b", {
+      duration: 0.3,
+      ease: "power1.out",
+      onUpdate: function () {
+        docEl.style.setProperty("--vblur", state.b > 0.04 ? state.b.toFixed(2) + "px" : "0px");
+      }
+    });
     lenis.on("scroll", function (e) {
-      var t = Math.min(Math.abs(e.velocity || 0) / 40, 1) * 1.6;
-      gsap.to(state, { b: t, duration: 0.3, ease: "power1.out", overwrite: true, onUpdate: apply });
+      ease(Math.min(Math.abs(e.velocity || 0) / 40, 1) * 1.6);
     });
   }
 
@@ -587,6 +593,7 @@
           start: "top top",
           end: function () { return "+=" + (track.scrollWidth - sec.clientWidth); },
           pin: true,
+          anticipatePin: 1,
           scrub: 1,
           invalidateOnRefresh: true
         }
@@ -853,6 +860,12 @@
     initCursor();
     initMenu();
     initToTop();
+
+    // Pin/trigger distances are measured before images and fonts settle;
+    // re-measure once everything has actually loaded.
+    window.addEventListener("load", function () {
+      if (window.ScrollTrigger) ScrollTrigger.refresh();
+    });
   }
 
   if (document.readyState === "loading") {
