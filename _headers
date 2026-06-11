@@ -2,12 +2,13 @@
 /assets/fonts/*
   Cache-Control: public, max-age=31536000, immutable
 
-# CSS/JS have no hashed filenames (no build step), so keep these short
-# enough that edits propagate within minutes
+# CSS/JS have no hashed filenames (no build step). no-cache means the
+# browser revalidates on every load (cheap 304 via ETag) — HTML, CSS
+# and JS always deploy in lockstep and can never run mismatched.
 /assets/css/*
-  Cache-Control: public, max-age=600
+  Cache-Control: no-cache
 /assets/js/*
-  Cache-Control: public, max-age=600
+  Cache-Control: no-cache
 
 /*
   X-Content-Type-Options: nosniff
