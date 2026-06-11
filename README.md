@@ -71,7 +71,7 @@ The `tag` doubles as the entry's category: the journal index builds its filter c
 The motion system borrows its metaphors from analog photography:
 
 - **First visit**: a darkroom-timer loading dial — a circular ring sweeps from 12 o'clock with a mono percentage in the center ("Developing") — then the hero rises. Runs once per browser session via `sessionStorage`, lasts ~2s, and a CSS failsafe fades it even if scripts never load.
-- **Page transitions**: a two-frame film strip winds vertically through the gate — perforations down both edges, rebate text ("Dayne 400 · FR 07") printed along the film edge, a light-leak flash as the frame gap passes, and the page grain swelling while the strip is in motion. The frame counter ticks per navigation.
+- **Page transitions**: a two-frame film strip winds vertically through the gate — rebate text ("Dayne 400 · FR 07") printed along the film edge, a light-leak flash as the frame gap passes, and the page grain swelling while the strip is in motion. The frame counter ticks per navigation.
 - **Image reveals**: photographs surface from blank paper with exposure settling in (filter/opacity animation), like a print in the developing tray.
 - **Labels**: all metadata is set in Fragment Mono, like film-rebate markings; work-grid cards and series-page images are stamped with automatic `FR 01`-style frame numbers (CSS counters — no markup needed).
 - **Scroll velocity**: scrolling fast softens the page like motion blur; it settles crisp when you stop.

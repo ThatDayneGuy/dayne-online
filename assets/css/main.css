@@ -401,10 +401,9 @@ body::after {
 
 .loader .label { color: #8d8c88; }
 
-/* Film-strip transition: a physical strip of two frames winds through
-   the gate. Perforations run down both edges, rebate text is printed
-   vertically, and the frame gap carries a light leak that flashes
-   across the screen as it passes. */
+/* Film-strip transition: a strip of two frames winds through the gate.
+   Rebate text is printed vertically along the edge, and the frame gap
+   carries a light leak that flashes across the screen as it passes. */
 .transition {
   position: fixed;
   inset: 0;
@@ -439,23 +438,6 @@ body::after {
               rgba(243, 242, 239, 0.85),
               rgba(243, 242, 239, 0) 75%);
 }
-
-/* Perforations along both edges */
-.transition .strip::before,
-.transition .strip::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: clamp(14px, 1.8vw, 20px);
-  z-index: 1;
-  background-image: radial-gradient(rgba(243, 242, 239, 0.25) 34%, transparent 38%);
-  background-size: 100% 36px;
-  background-repeat: repeat-y;
-}
-
-.transition .strip::before { left: clamp(8px, 1.2vw, 16px); }
-.transition .strip::after { right: clamp(8px, 1.2vw, 16px); }
 
 /* Rebate text printed along the film edge */
 .transition .fr {
