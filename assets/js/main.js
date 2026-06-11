@@ -210,16 +210,19 @@
      Page transitions (wipe out on internal links, wipe in on arrival)
   ------------------------------------------------------------------ */
   function initTransitions() {
-    // Frame advance: one dark frame slides up through the viewport on the
-    // way out, and continues up and away on arrival — like winding film.
-    // A mono counter ticks the session's frame number in the corner.
+    // Film advance: a two-frame strip winds vertically through the gate.
+    // Leaving, the first frame covers the screen; arriving, the strip
+    // keeps winding — frame out, light-leak gap flashes past, second
+    // frame through — until the new page is exposed. Grain swells while
+    // the strip is in motion.
     var overlay = document.querySelector(".transition");
     if (!overlay || !hasGsap || reduceMotion) {
       docEl.classList.remove("pt-in");
       return;
     }
-    var panel = overlay.querySelector(".panel");
+    var strip = overlay.querySelector(".strip");
     var frEl = overlay.querySelector(".fr");
+    if (!strip) return;
 
     function frameNo() {
       var n = 1;
@@ -228,20 +231,26 @@
     }
 
     function stamp(n) {
-      if (frEl) frEl.textContent = "FR " + String(n).padStart(2, "0");
+      if (frEl) frEl.textContent = "Dayne 400 · FR " + String(n).padStart(2, "0");
     }
 
-    // Arriving mid-transition: the frame keeps moving up and off
+    function grain(to, duration) {
+      gsap.to(docEl, { "--grain": to, duration: duration, ease: "power1.inOut", overwrite: "auto" });
+    }
+
+    // Arriving mid-transition: wind the whole strip through the gate
     if (docEl.classList.contains("pt-in")) {
       stamp(frameNo());
-      gsap.to(panel, {
-        yPercent: -102,
-        duration: 0.75,
+      gsap.set(docEl, { "--grain": 0.12 });
+      grain(0.035, 1.2);
+      gsap.to(strip, {
+        y: "-210vh",
+        duration: 1,
         ease: "expo.inOut",
-        delay: 0.08,
+        delay: 0.06,
         onComplete: function () {
           docEl.classList.remove("pt-in");
-          gsap.set(panel, { yPercent: 102 });
+          gsap.set(strip, { y: "100vh" });
         }
       });
     }
@@ -289,8 +298,9 @@
         sessionStorage.setItem("pt", "1");
       } catch (err) {}
       stamp(n);
-      gsap.fromTo(panel, { yPercent: 102 }, {
-        yPercent: 0,
+      grain(0.12, 0.5);
+      gsap.fromTo(strip, { y: "100vh" }, {
+        y: "0vh",
         duration: 0.6,
         ease: "expo.inOut",
         onComplete: function () {
@@ -303,7 +313,8 @@
     window.addEventListener("pageshow", function (e) {
       if (e.persisted) {
         navigating = false;
-        gsap.set(panel, { yPercent: 102 });
+        gsap.set(strip, { y: "100vh" });
+        gsap.set(docEl, { "--grain": 0.035 });
         docEl.classList.remove("pt-in");
       }
     });

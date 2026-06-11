@@ -91,14 +91,14 @@ ul, ol { list-style: none; }
   outline-color: var(--bg);
 }
 
-/* Film-grain overlay, very faint */
+/* Film-grain overlay, very faint; --grain swells during transitions */
 body::after {
   content: "";
   position: fixed;
   inset: 0;
   z-index: 60;
   pointer-events: none;
-  opacity: 0.035;
+  opacity: var(--grain, 0.035);
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
@@ -401,8 +401,10 @@ body::after {
 
 .loader .label { color: #8d8c88; }
 
-/* Frame-advance transition: one dark frame slides through vertically,
-   like winding a film camera. Leading edge carries the frame gap line. */
+/* Film-strip transition: a physical strip of two frames winds through
+   the gate. Perforations run down both edges, rebate text is printed
+   vertically, and the frame gap carries a light leak that flashes
+   across the screen as it passes. */
 .transition {
   position: fixed;
   inset: 0;
@@ -411,36 +413,67 @@ body::after {
   overflow: hidden;
 }
 
-.transition .panel {
+.transition .strip {
   position: absolute;
-  inset: 0;
-  background: #0c0c0c;
-  transform: translateY(102%);
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 210vh; /* frame + gap + frame */
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100vh); /* parked below the gate */
 }
 
-.transition .panel::before {
+.transition .cell {
+  position: relative;
+  flex: none;
+  height: 100vh;
+  background: #0c0c0c;
+}
+
+/* Frame gap: mostly transparent, carrying a soft light leak */
+.transition .gap {
+  flex: none;
+  height: 10vh;
+  background: radial-gradient(ellipse 70% 100% at 50% 50%,
+              rgba(243, 242, 239, 0.85),
+              rgba(243, 242, 239, 0) 75%);
+}
+
+/* Perforations along both edges */
+.transition .strip::before,
+.transition .strip::after {
   content: "";
   position: absolute;
   top: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: rgba(243, 242, 239, 0.35);
+  bottom: 0;
+  width: clamp(14px, 1.8vw, 20px);
+  z-index: 1;
+  background-image: radial-gradient(rgba(243, 242, 239, 0.25) 34%, transparent 38%);
+  background-size: 100% 36px;
+  background-repeat: repeat-y;
 }
 
+.transition .strip::before { left: clamp(8px, 1.2vw, 16px); }
+.transition .strip::after { right: clamp(8px, 1.2vw, 16px); }
+
+/* Rebate text printed along the film edge */
 .transition .fr {
   position: absolute;
-  bottom: var(--pad);
-  right: var(--pad);
+  top: 50%;
+  right: clamp(2rem, 3.6vw, 3.2rem);
+  transform: translateY(-50%);
+  writing-mode: vertical-rl;
+  z-index: 2;
   font-family: var(--mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #8d8c88;
+  color: rgba(243, 242, 239, 0.55);
 }
 
-/* Arriving mid-transition: start covered, JS advances the frame away */
-.pt-in .transition .panel { transform: translateY(0); }
+/* Arriving mid-transition: the gate starts covered by the first frame */
+.pt-in .transition .strip { transform: translateY(0); }
 
 /* ==========================================================================
    Hero
