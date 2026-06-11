@@ -70,7 +70,7 @@ The `tag` doubles as the entry's category: the journal index builds its filter c
 
 The motion system borrows its metaphors from analog photography:
 
-- **First visit**: the homepage develops out of a paper-white sheet (no blocking preloader; runs once per browser session via `sessionStorage`).
+- **First visit**: a darkroom-timer loading dial — a circular ring sweeps from 12 o'clock with a mono percentage in the center ("Developing") — then the hero rises. Runs once per browser session via `sessionStorage`, lasts ~2s, and a CSS failsafe fades it even if scripts never load.
 - **Page transitions**: a frame-advance — one dark frame winds vertically through the viewport, with a mono frame counter (`FR 02`, `FR 03`…) ticking up per navigation.
 - **Image reveals**: photographs surface from blank paper with exposure settling in (filter/opacity animation), like a print in the developing tray.
 - **Labels**: all metadata is set in Fragment Mono, like film-rebate markings; work-grid cards and series-page images are stamped with automatic `FR 01`-style frame numbers (CSS counters — no markup needed).
