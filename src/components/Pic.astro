@@ -1,0 +1,29 @@
+---
+// One image, rendered with the attributes the design system expects:
+// explicit dimensions (no layout shift), async decoding, and a responsive
+// srcset for large frames. Swap this component's internals to astro:assets
+// when real photographs replace the picsum placeholders (see src/lib/images.ts).
+import { parsePicsum, picsumSrcset } from "../lib/images";
+
+interface Props {
+  src: string;
+  alt: string;
+  sizes?: string;
+  eager?: boolean; // true for the LCP image of a page
+}
+
+const { src, alt, sizes = "(max-width: 760px) 100vw, 60vw", eager = false } = Astro.props;
+const dims = parsePicsum(src);
+const srcset = picsumSrcset(src);
+---
+<img
+  src={src}
+  alt={alt}
+  width={dims?.width}
+  height={dims?.height}
+  decoding="async"
+  loading={eager ? undefined : "lazy"}
+  fetchpriority={eager ? "high" : undefined}
+  srcset={srcset}
+  sizes={srcset ? sizes : undefined}
+/>

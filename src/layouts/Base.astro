@@ -1,0 +1,127 @@
+---
+// The one true page shell: head, transition overlay, cursor, header,
+// menu, footer, and the script stack. Every page on the site renders
+// through this layout — change navigation or metadata behavior here.
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+
+interface Props {
+  title: string;
+  description: string;
+  ogImage: string;
+  path: string; // canonical path, e.g. "/work.html" or "/" for home
+  ogType?: string;
+  current?: "work" | "archive" | "journal" | "about" | null;
+  bodyClass?: string;
+  home?: boolean; // adds the loading dial + first-visit logic
+  progress?: boolean; // adds the reading-progress hairline (journal entries)
+  footer?: boolean; // the archive page turns the footer off
+  footerPushTop?: boolean;
+}
+
+const {
+  title,
+  description,
+  ogImage,
+  path,
+  ogType = "website",
+  current = null,
+  bodyClass,
+  home = false,
+  progress = false,
+  footer = true,
+  footerPushTop = false
+} = Astro.props;
+
+const canonical = new URL(path, Astro.site).href;
+const FAVICON =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230c0c0c'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Helvetica' font-size='17' font-weight='700' fill='%23f3f2ef'%3ED%3C/text%3E%3C/svg%3E";
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    {home && <meta property="og:site_name" content="dayne.online" />}
+    {home && <meta name="twitter:card" content="summary_large_image" />}
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href={FAVICON} />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#f5f4f1" />
+
+    <script is:inline define:vars={{ home }}>
+    (function () {
+        var d = document.documentElement;
+        d.classList.add("js");
+        try { if (localStorage.getItem("bg") === "dark") { d.classList.add("theme-dark"); } } catch (e) {}
+        try {
+            if (sessionStorage.getItem("pt")) { d.classList.add("pt-in"); sessionStorage.removeItem("pt"); }
+            if (home && !sessionStorage.getItem("visited")) { d.classList.add("preload"); }
+        } catch (e) {}
+    })();
+    </script>
+
+    <link rel="preload" href="/assets/fonts/archivo-normal-100-900.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/assets/fonts/fragment-mono-normal-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/assets/css/fonts.css" />
+    <link rel="stylesheet" href="/assets/css/main.css" />
+
+    {home && (
+      <script is:inline type="application/ld+json" set:html={JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        name: "dayne.online",
+        url: "https://dayne.online/",
+        description: "Photography portfolio and journal of Dayne.",
+        author: { "@type": "Person", name: "Dayne", url: "https://dayne.online/", jobTitle: "Photographer" }
+      })} />
+    )}
+    <slot name="head" />
+</head>
+<body class={bodyClass}>
+
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    {home && (
+      <div class="loader" aria-hidden="true">
+        <div class="loader-core">
+            <div class="loader-dial">
+                <svg viewBox="0 0 120 120" aria-hidden="true">
+                    <circle class="track" cx="60" cy="60" r="54"></circle>
+                    <circle class="ring" cx="60" cy="60" r="54"></circle>
+                </svg>
+                <span class="loader-pct">0</span>
+            </div>
+            <span class="label">Developing</span>
+        </div>
+      </div>
+    )}
+
+    {progress && <div class="progress" aria-hidden="true"></div>}
+
+    <div class="transition" aria-hidden="true"><div class="strip"></div></div>
+    <div class="cursor" aria-hidden="true"><span class="cursor-label"></span></div>
+
+    <Header current={current} />
+
+    <slot />
+
+    {footer && <Footer pushTop={footerPushTop} />}
+
+    <script is:inline defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script is:inline defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+    <script is:inline defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+    <script is:inline defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Flip.min.js"></script>
+    <script is:inline defer src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
+    <script is:inline defer src="/assets/js/main.js"></script>
+</body>
+</html>

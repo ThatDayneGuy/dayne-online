@@ -1,0 +1,23 @@
+---
+interface Props {
+  pushTop?: boolean; // extra top margin (journal entries)
+}
+const { pushTop = false } = Astro.props;
+---
+<footer class={pushTop ? "site-footer push-top" : "site-footer"}>
+  <a class="footer-cta" href="mailto:me@dayne.online">
+    <span class="label">test text test text</span>
+    <span class="big">Test text</span>
+  </a>
+  <div class="footer-grid">
+    <span>&copy; 2026 Dayne &mdash; All rights reserved</span>
+    <nav aria-label="Footer">
+      <a href="/work.html">Work</a>
+      <a href="/archive.html">Archive</a>
+      <a href="/journal.html">Journal</a>
+      <a href="/about.html">About</a>
+      <a href="mailto:me@dayne.online">Email</a>
+    </nav>
+    <button class="to-top">Back to top &uarr;</button>
+  </div>
+</footer>

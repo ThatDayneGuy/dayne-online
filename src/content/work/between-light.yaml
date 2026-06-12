@@ -1,0 +1,46 @@
+title: "Test text"
+order: 4
+featured: false
+year: "2025"
+frames: "9"
+format: "Portraits, natural light"
+status: "Ongoing"
+description: "Between Light — a portrait series by Dayne."
+cardLabel: "test text"
+cover: "https://picsum.photos/seed/dayne-w4/2400/1350?grayscale"
+coverAlt: "A portrait lit by a single window"
+note: 'Test text test text test text test text test text <span class="serif-i">test text test text.</span>'
+strip:
+  - src: "https://picsum.photos/seed/dayne-b6/1600/1067?grayscale"
+    alt: "Photograph from this series"
+    tall: false
+  - src: "https://picsum.photos/seed/dayne-b7/1200/1600?grayscale"
+    alt: "Photograph from this series"
+    tall: true
+  - src: "https://picsum.photos/seed/dayne-b8/1600/1067?grayscale"
+    alt: "Photograph from this series"
+    tall: false
+  - src: "https://picsum.photos/seed/dayne-b9/1200/1600?grayscale"
+    alt: "Photograph from this series"
+    tall: true
+  - src: "https://picsum.photos/seed/dayne-b10/1600/1067?grayscale"
+    alt: "Photograph from this series"
+    tall: false
+images:
+  - src: "https://picsum.photos/seed/dayne-b1/1600/1200?grayscale"
+    alt: "Photograph from this series"
+    slot: "left"
+  - src: "https://picsum.photos/seed/dayne-b2/1200/1600?grayscale"
+    alt: "Photograph from this series"
+    slot: "small-right"
+  - src: "https://picsum.photos/seed/dayne-b3/2400/1350?grayscale"
+    alt: "Photograph from this series"
+    slot: "full"
+  - src: "https://picsum.photos/seed/dayne-b4/1200/1600?grayscale"
+    alt: "Photograph from this series"
+    slot: "small-left"
+  - src: "https://picsum.photos/seed/dayne-b5/1600/1200?grayscale"
+    alt: "Photograph from this series"
+    slot: "right"
+journal: "on-waiting"
+next: "threshold"

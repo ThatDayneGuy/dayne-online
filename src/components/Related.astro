@@ -1,0 +1,19 @@
+---
+// Cross-link card: journal entries point to their series, series pages
+// point back to a journal entry.
+interface Props {
+  href: string;
+  label: string; // "From the series" / "From the journal"
+  title: string;
+  thumb: string; // square-ish thumbnail URL
+}
+const { href, label, title, thumb } = Astro.props;
+---
+<a class="related" href={href} data-reveal>
+  <div class="thumb"><div class="frame"><img src={thumb} alt="" loading="lazy" width="400" height="400" decoding="async" /></div></div>
+  <div>
+    <span class="label">{label}</span>
+    <span class="rel-title">{title}</span>
+  </div>
+  <span class="rel-arrow" aria-hidden="true">&rarr;</span>
+</a>

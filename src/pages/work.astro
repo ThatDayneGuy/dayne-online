@@ -1,0 +1,41 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../layouts/Base.astro";
+import Pic from "../components/Pic.astro";
+
+const series = (await getCollection("work")).sort((a, b) => a.data.order - b.data.order);
+---
+<Base
+  title="Work — Dayne"
+  description="Selected photographic series by Dayne. Monochrome work on thresholds, stillness, the city at night, and people in passing light."
+  ogImage="https://picsum.photos/seed/dayne-w1/1200/630?grayscale"
+  path="/work.html"
+  current="work"
+>
+  <main id="main" tabindex="-1">
+    <section class="page-head wrap">
+      <h1 data-title-reveal><span class="line">Work</span></h1>
+      <p class="sub" data-reveal>Test text test text test text.</p>
+      <div class="view-toggle" role="group" aria-label="View mode" data-reveal>
+        <button class="chip" type="button" data-view="editorial" aria-pressed="true">Editorial</button>
+        <button class="chip" type="button" data-view="sheet" aria-pressed="false">Contact sheet</button>
+      </div>
+    </section>
+
+    <section class="wrap section-end work-grid-wrap">
+      <div class="work-grid">
+        {series.map((s) => (
+          <a class="work-card" href={`/work/${s.id}.html`} data-cursor="View" data-vt>
+            <div class="frame" data-reveal-img>
+              <Pic src={s.data.cover} alt={s.data.coverAlt} />
+            </div>
+            <div class="work-card-info">
+              <h2>{s.data.title}</h2>
+              <span class="label">{s.data.cardLabel}</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+  </main>
+</Base>
