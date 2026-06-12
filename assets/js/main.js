@@ -231,21 +231,39 @@
     // -20vh so the feathers sit outside the gate.
     function vh(n) { return window.innerHeight * (n / 100); }
 
-    // Arriving mid-transition: the pane slides on through, and the new
-    // page sharpens out of the frost behind it
-    if (docEl.classList.contains("pt-in")) {
+    // Arriving: the pane slides on through, and the new page sharpens
+    // out of the frost behind it
+    function playArrival() {
       gsap.set(docEl, { "--grain": 0.12 });
       grain(0.035, 1.2);
       gsap.fromTo(strip, { y: -vh(20) }, {
         y: function () { return -vh(140); },
-        duration: 0.9,
+        duration: 0.8,
         ease: "expo.inOut",
-        delay: 0.06,
         onComplete: function () {
           docEl.classList.remove("pt-in");
           gsap.set(strip, { y: vh(100) });
         }
       });
+    }
+
+    if (docEl.classList.contains("pt-in")) {
+      playArrival();
+    } else if (document.prerendering) {
+      // This document was prerendered before the click, so the inline
+      // head script ran before the departing page set its flag. Check
+      // again at activation and play the arrival from there.
+      document.addEventListener("prerenderingchange", function () {
+        var flagged = false;
+        try {
+          flagged = !!sessionStorage.getItem("pt");
+          if (flagged) sessionStorage.removeItem("pt");
+        } catch (e) {}
+        if (flagged) {
+          docEl.classList.add("pt-in");
+          playArrival();
+        }
+      }, { once: true });
     }
 
     var navigating = false;
@@ -286,10 +304,14 @@
       grain(0.12, 0.5);
       gsap.fromTo(strip, { y: vh(100) }, {
         y: function () { return -vh(20); },
-        duration: 0.65,
+        duration: 0.55,
         ease: "expo.inOut",
         onComplete: function () {
           location.href = href;
+          // The old page keeps painting while the next one is fetched —
+          // let the glass drift instead of freezing. The solid core
+          // still covers the viewport at -22vh.
+          gsap.to(strip, { y: "-=" + vh(2), duration: 2, ease: "none" });
         }
       });
     });
@@ -860,6 +882,39 @@
   }
 
   /* ------------------------------------------------------------------
+     Speculative loading: the next page is ready before it's needed.
+     Chromium prerenders same-site pages on hover (Speculation Rules);
+     other browsers get a hover prefetch so the post-animation fetch
+     costs nothing. Either way the transition hand-off has no dead time.
+  ------------------------------------------------------------------ */
+  function initSpeculation() {
+    if (window.HTMLScriptElement && HTMLScriptElement.supports &&
+        HTMLScriptElement.supports("speculationrules")) {
+      var rules = document.createElement("script");
+      rules.type = "speculationrules";
+      rules.textContent = JSON.stringify({
+        prerender: [{ where: { href_matches: "/*" }, eagerness: "moderate" }]
+      });
+      document.head.appendChild(rules);
+      return;
+    }
+
+    // Fallback: warm the HTTP cache on first hover of each link
+    var seen = {};
+    document.addEventListener("mouseover", function (e) {
+      var link = e.target.closest("a[href]");
+      if (!link || link.hostname !== location.hostname) return;
+      var href = link.href.split("#")[0];
+      if (seen[href] || href === location.href.split("#")[0]) return;
+      seen[href] = true;
+      var hint = document.createElement("link");
+      hint.rel = "prefetch";
+      hint.href = href;
+      document.head.appendChild(hint);
+    });
+  }
+
+  /* ------------------------------------------------------------------
      Back to top
   ------------------------------------------------------------------ */
   function initToTop() {
@@ -904,6 +959,7 @@
     initCursor();
     initMenu();
     initToTop();
+    initSpeculation();
 
     // Pin/trigger distances are measured before images and fonts settle;
     // re-measure once everything has actually loaded.
