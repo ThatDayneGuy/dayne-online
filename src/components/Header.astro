@@ -1,0 +1,38 @@
+---
+// Fixed site header. `current` highlights the active section.
+interface Props {
+  current?: "work" | "archive" | "journal" | "about" | null;
+}
+const { current = null } = Astro.props;
+const links = [
+  { href: "/work.html", key: "work", label: "Work" },
+  { href: "/archive.html", key: "archive", label: "Archive" },
+  { href: "/journal.html", key: "journal", label: "Journal" },
+  { href: "/about.html", key: "about", label: "About" }
+];
+---
+<header class="site-header">
+  <a class="logo" href="/index.html">Dayne<sup>&copy;</sup></a>
+  <nav class="site-nav" aria-label="Primary">
+    {links.map((l) => (
+      <a href={l.href} aria-current={current === l.key ? "page" : undefined}>{l.label}</a>
+    ))}
+  </nav>
+  <button class="bg-toggle" type="button" aria-label="Toggle background" aria-pressed="false">&#9681;</button>
+  <button class="menu-toggle" aria-expanded="false" aria-controls="menu" aria-label="Open menu">
+    <span></span><span></span>
+  </button>
+</header>
+
+<nav class="menu" id="menu" aria-label="Menu">
+  <ol>
+    <li><a href="/index.html"><span>Index</span></a></li>
+    {links.map((l) => (
+      <li><a href={l.href}><span>{l.label}</span></a></li>
+    ))}
+  </ol>
+  <div class="menu-foot">
+    <a href="mailto:me@dayne.online">me@dayne.online</a>
+    <span>&copy; 2026</span>
+  </div>
+</nav>

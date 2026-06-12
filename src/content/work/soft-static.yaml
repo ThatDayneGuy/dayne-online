@@ -1,0 +1,46 @@
+title: "Test text"
+order: 3
+featured: true
+year: "2024"
+frames: "18"
+format: "Digital, pushed monochrome"
+status: "Complete"
+description: "Soft Static — a photographic series by Dayne."
+cardLabel: "test text"
+cover: "https://picsum.photos/seed/dayne-w3/2400/1350?grayscale"
+coverAlt: "A city street at night, blurred lights"
+note: 'Test text test text test text test text test text <span class="serif-i">test text test text.</span>'
+strip:
+  - src: "https://picsum.photos/seed/dayne-n6/1600/1067?grayscale"
+    alt: "Photograph from this series"
+    tall: false
+  - src: "https://picsum.photos/seed/dayne-n7/1200/1600?grayscale"
+    alt: "Photograph from this series"
+    tall: true
+  - src: "https://picsum.photos/seed/dayne-n8/1600/1067?grayscale"
+    alt: "Photograph from this series"
+    tall: false
+  - src: "https://picsum.photos/seed/dayne-n9/1200/1600?grayscale"
+    alt: "Photograph from this series"
+    tall: true
+  - src: "https://picsum.photos/seed/dayne-n10/1600/1067?grayscale"
+    alt: "Photograph from this series"
+    tall: false
+images:
+  - src: "https://picsum.photos/seed/dayne-n1/1600/1200?grayscale"
+    alt: "Photograph from this series"
+    slot: "left"
+  - src: "https://picsum.photos/seed/dayne-n2/1200/1600?grayscale"
+    alt: "Photograph from this series"
+    slot: "small-right"
+  - src: "https://picsum.photos/seed/dayne-n3/2400/1350?grayscale"
+    alt: "Photograph from this series"
+    slot: "full"
+  - src: "https://picsum.photos/seed/dayne-n4/1200/1600?grayscale"
+    alt: "Photograph from this series"
+    slot: "small-left"
+  - src: "https://picsum.photos/seed/dayne-n5/1600/1200?grayscale"
+    alt: "Photograph from this series"
+    slot: "right"
+journal: "one-camera-one-lens"
+next: "between-light"

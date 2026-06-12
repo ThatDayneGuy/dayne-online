@@ -1,0 +1,67 @@
+---
+import { getCollection, getEntry, render } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import Pic from "../../components/Pic.astro";
+import Related from "../../components/Related.astro";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("journal");
+  return posts.map((p) => ({ params: { slug: p.id }, props: { post: p } }));
+}
+
+const { post } = Astro.props;
+const d = post.data;
+const { Content } = await render(post);
+
+const series = d.series ? await getEntry("work", d.series) : null;
+
+const longDate = d.date.toLocaleDateString("en-GB", {
+  day: "numeric",
+  month: "long",
+  year: "numeric"
+});
+---
+<Base
+  title={`${d.title} — Journal — Dayne`}
+  description={d.description}
+  ogImage={d.cover.replace(/\/\d+\/\d+\?/, "/1200/630?")}
+  path={`/journal/${post.id}.html`}
+  ogType="article"
+  current="journal"
+  progress
+  footerPushTop
+>
+  <main id="main" tabindex="-1" class="wrap">
+    <article class="post">
+      <header class="post-head">
+        <span class="label" data-reveal>{d.category}</span>
+        <h1 data-reveal>{d.title}</h1>
+        <p class="post-date" data-reveal>{longDate} &mdash; {d.readMinutes} min read</p>
+      </header>
+
+      <figure class="post-hero">
+        <div class="frame" data-reveal-img data-parallax>
+          <Pic src={d.cover} alt={d.coverAlt} sizes="100vw" eager />
+        </div>
+      </figure>
+
+      <div class="post-body">
+        <Content />
+      </div>
+
+      {series && (
+        <Related
+          href={`/work/${series.id}.html`}
+          label="From the series"
+          title={series.data.title}
+          thumb={series.data.cover.replace(/\/\d+\/\d+\?/, "/400/400?")}
+        />
+      )}
+
+      <footer class="post-foot">
+        <a href="/journal.html">&larr; Back to journal</a>
+        <a href="mailto:me@dayne.online">Reply by email</a>
+      </footer>
+    </article>
+  </main>
+</Base>

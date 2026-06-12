@@ -1,0 +1,46 @@
+title: "Test text"
+order: 1
+featured: true
+year: "2025"
+frames: "14"
+format: "35mm, monochrome"
+status: "Ongoing"
+description: "Threshold — a photographic series by Dayne."
+cardLabel: "test text"
+cover: "https://picsum.photos/seed/dayne-w1/2400/1350?grayscale"
+coverAlt: "A doorway caught between light and shadow"
+note: 'Test text test text test text test text test text <span class="serif-i">test text test text.</span>'
+strip:
+  - src: "https://picsum.photos/seed/dayne-t6/1600/1067?grayscale"
+    alt: "Photograph from this series"
+    tall: false
+  - src: "https://picsum.photos/seed/dayne-t7/1200/1600?grayscale"
+    alt: "Photograph from this series"
+    tall: true
+  - src: "https://picsum.photos/seed/dayne-t8/1600/1067?grayscale"
+    alt: "Photograph from this series"
+    tall: false
+  - src: "https://picsum.photos/seed/dayne-t9/1200/1600?grayscale"
+    alt: "Photograph from this series"
+    tall: true
+  - src: "https://picsum.photos/seed/dayne-t10/1600/1067?grayscale"
+    alt: "Photograph from this series"
+    tall: false
+images:
+  - src: "https://picsum.photos/seed/dayne-t1/1600/1200?grayscale"
+    alt: "Photograph from this series"
+    slot: "left"
+  - src: "https://picsum.photos/seed/dayne-t2/1200/1600?grayscale"
+    alt: "Photograph from this series"
+    slot: "small-right"
+  - src: "https://picsum.photos/seed/dayne-t3/2400/1350?grayscale"
+    alt: "Photograph from this series"
+    slot: "full"
+  - src: "https://picsum.photos/seed/dayne-t4/1200/1600?grayscale"
+    alt: "Photograph from this series"
+    slot: "small-left"
+  - src: "https://picsum.photos/seed/dayne-t5/1600/1200?grayscale"
+    alt: "Photograph from this series"
+    slot: "right"
+journal: "on-waiting"
+next: "stillness"

@@ -1,0 +1,21 @@
+---
+import Base from "../layouts/Base.astro";
+---
+<Base
+  title="Frame not found — Dayne"
+  description="This frame doesn't exist. The rest of the roll does."
+  ogImage="https://picsum.photos/seed/dayne-hero/1200/630?grayscale"
+  path="/404.html"
+>
+  <Fragment slot="head">
+    <meta name="robots" content="noindex" />
+  </Fragment>
+  <main id="main" tabindex="-1">
+    <section class="page-head wrap" style="min-height: 70vh;">
+      <p class="label label-block">FR 404 &mdash; frame not found</p>
+      <h1><span class="line">Nothing<br />developed</span></h1>
+      <p class="sub">This frame doesn't exist &mdash; blank on the contact sheet. The rest of the roll is intact.</p>
+      <p style="margin-top: 2.5rem;"><a class="label label-link" href="/index.html">Back to the index</a></p>
+    </section>
+  </main>
+</Base>
