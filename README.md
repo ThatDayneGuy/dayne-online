@@ -6,7 +6,7 @@ Photography portfolio & journal. A static site — no build step, no framework. 
 
 ```
 index.html              Home — hero, statement, selected work (shuffles per visit), journal preview
-work.html               Portfolio index — cinema reel <-> contact-sheet toggle
+work.html               Portfolio index — editorial grid <-> contact-sheet toggle
 work/*.html             Series pages — cover, pinned horizontal film strip, frames, journal cross-link
 archive.html            Infinite drag canvas of every frame (plain grid without JS)
 journal.html            Journal index — category filter, hover previews
@@ -74,7 +74,6 @@ The motion system borrows its metaphors from analog photography:
 - **Page transitions**: a liquid-glass pane sweeps vertically through the viewport — the page stays visible through it, heavily frosted (`backdrop-filter`), the swap happens behind the glass, and the new page sharpens as the pane exits. Feathered edges via mask, luminous specular edges, grain swelling while in motion. Browsers without backdrop-filter get a near-opaque pane instead.
 - **Image reveals**: photographs surface from blank paper with exposure settling in (filter/opacity animation), like a print in the developing tray.
 - **Labels**: all metadata is set in Fragment Mono, like film-rebate markings; work-grid cards and series-page images are stamped with automatic `FR 01`-style frame numbers (CSS counters — no markup needed).
-- **Cinema reel** (work page): a full-viewport vertical reel with snap physics — wheel, drag or fling past the tension threshold to advance; anything short springs back with a rubber-band elastic. Outgoing text leads its image, incoming frames sit behind a glass veil until half in, and the cursor morphs into a grab state with directional chevrons mid-drag. Feel constants (threshold, spring, lerp) live at the top of `initReel()` in `main.js`. The contact-sheet grid is the alternate view and the no-JS / reduced-motion fallback.
 - **Scroll velocity**: scrolling fast softens the page like motion blur; it settles crisp when you stop.
 - **Idle screensaver** (home): after 45 seconds of stillness the site slow-plays the work full-screen; any input wakes it.
 - **Background toggle** (the ◐ in the header): paper-white ↔ near-black, persisted per visitor.
