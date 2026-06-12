@@ -668,28 +668,273 @@
   }
 
   /* ------------------------------------------------------------------
-     Work index: editorial grid <-> contact sheet, animated with Flip
+     Cinema reel (work page): full-viewport vertical reel with snap
+     physics. Wheel, drag or fling past the tension threshold to
+     advance — anything short springs back. Outgoing text leads its
+     image, incoming frames sit behind a glass veil until half in.
   ------------------------------------------------------------------ */
-  function initWorkToggle() {
+  function initReel() {
+    var reel = document.querySelector("[data-reel]");
+    if (!reel || !hasGsap || reduceMotion) return null;
+    var slides = Array.prototype.slice.call(reel.querySelectorAll(".reel-slide"));
+    if (slides.length < 2) return null;
+
+    var parts = slides.map(function (slide) {
+      var img = slide.querySelector(".reel-media img");
+      if (img) gsap.set(img, { scale: 1.18 }); // parallax headroom
+      return {
+        el: slide,
+        img: img,
+        info: slide.querySelector(".reel-info"),
+        veil: slide.querySelector(".reel-veil")
+      };
+    });
+
+    var count = slides.length;
+    var index = 0;
+    var current = -0.0001; // force first render
+    var tension = 0;
+    var acc = 0;
+    var active = false;
+    var locked = false;
+    var hinted = false;
+    var springTween = null;
+
+    // Feel constants — tune here
+    var LERP = 0.11;            // glide smoothing
+    var MAX_TENSION = 0.34;     // rubber-band cap (fraction of a slide)
+    var COMMIT_PX = 0.17;       // input distance to commit (fraction of vh)
+    var FLING_V = 0.9;          // px/ms pointer velocity that commits
+    var RANGE = 0.6;            // input range mapped into tension
+
+    var cursor = document.querySelector(".cursor");
+    var hint = reel.querySelector(".reel-hint");
+    var rail = reel.querySelector(".reel-rail");
+    var numCol = reel.querySelector(".reel-num-col");
+    var total = reel.querySelector(".reel-total");
+    var ticks = [];
+
+    // Build counter column and rail ticks from the slide count
+    if (numCol) {
+      for (var n = 1; n <= count; n++) {
+        var s = document.createElement("span");
+        s.textContent = String(n).padStart(2, "0");
+        numCol.appendChild(s);
+      }
+    }
+    if (total) total.textContent = String(count).padStart(2, "0");
+    if (rail) {
+      for (var t = 0; t < count; t++) {
+        var tick = document.createElement("span");
+        if (t === 0) tick.classList.add("is-on");
+        rail.appendChild(tick);
+        ticks.push(tick);
+      }
+    }
+
+    function rubber(x) { return x / (1 + Math.abs(x) * 1.6); }
+    function clampT(x) { return Math.max(-MAX_TENSION, Math.min(MAX_TENSION, x)); }
+
+    function render(p) {
+      for (var i = 0; i < count; i++) {
+        var off = i - p;
+        var part = parts[i];
+        var away = Math.abs(off) > 1.1;
+        part.el.style.visibility = away ? "hidden" : "visible";
+        if (away) continue;
+        gsap.set(part.el, { yPercent: off * 100 });
+        if (part.info) gsap.set(part.info, { yPercent: off * 38 }); // text leads the image
+        if (part.img) gsap.set(part.img, { yPercent: off * -10 }); // image counter-drifts
+        if (part.veil) gsap.set(part.veil, { opacity: Math.min(Math.abs(off) * 2, 1) });
+        part.el.classList.toggle("is-active", Math.abs(off) < 0.5);
+      }
+    }
+
+    function tickFn() {
+      if (!active) return;
+      var target = index + tension;
+      var d = target - current;
+      if (Math.abs(d) < 0.0002) return;
+      current += d * LERP;
+      render(current);
+    }
+
+    function killSpring() {
+      if (springTween) { springTween.kill(); springTween = null; }
+    }
+
+    function springBack() {
+      killSpring();
+      acc = 0;
+      var proxy = { v: tension };
+      springTween = gsap.to(proxy, {
+        v: 0,
+        duration: 0.9,
+        ease: "elastic.out(1, 0.45)",
+        onUpdate: function () { tension = proxy.v; }
+      });
+    }
+
+    function syncUI() {
+      if (numCol) gsap.to(numCol, { yPercent: -(index * 100) / count, duration: 0.6, ease: "expo.out" });
+      ticks.forEach(function (tk, i) { tk.classList.toggle("is-on", i === index); });
+    }
+
+    function commit(dir) {
+      var next = Math.max(0, Math.min(count - 1, index + dir));
+      killSpring();
+      acc = 0;
+      if (next === index) { springBack(); return; } // hit an end: bounce
+      index = next;
+      tension = 0;
+      locked = true;
+      setTimeout(function () { locked = false; }, 450);
+      grain(0.1, 0.3);
+      grain(0.035, 0.9);
+      syncUI();
+      if (!hinted && hint) {
+        hinted = true;
+        gsap.to(hint, { opacity: 0, duration: 0.4 });
+      }
+    }
+
+    // grain helper local to the reel (the transition module has its own)
+    function grain(to, duration) {
+      gsap.to(docEl, { "--grain": to, duration: duration, ease: "power1.inOut", delay: to < 0.05 ? 0.3 : 0 });
+    }
+
+    function blocked() {
+      return !active || locked || docEl.classList.contains("menu-open");
+    }
+
+    // Wheel: accumulate tension, commit past threshold, spring back on idle
+    var wheelTimer = null;
+    window.addEventListener("wheel", function (e) {
+      if (!active) return;
+      e.preventDefault();
+      if (locked || docEl.classList.contains("menu-open")) return;
+      killSpring();
+      acc += e.deltaY;
+      tension = clampT(rubber(acc / (window.innerHeight * RANGE)));
+      clearTimeout(wheelTimer);
+      if (Math.abs(acc) > window.innerHeight * COMMIT_PX) {
+        commit(acc > 0 ? 1 : -1);
+      } else {
+        wheelTimer = setTimeout(springBack, 150);
+      }
+    }, { passive: false });
+
+    // Drag / fling
+    var dragging = false, startY = 0, lastY = 0, lastT = 0, vel = 0, movedY = 0;
+    reel.addEventListener("pointerdown", function (e) {
+      if (blocked()) return;
+      dragging = true;
+      movedY = 0;
+      startY = lastY = e.clientY;
+      lastT = performance.now();
+      vel = 0;
+      killSpring();
+      if (cursor) cursor.classList.add("is-grab");
+    });
+    window.addEventListener("pointermove", function (e) {
+      if (!dragging) return;
+      var now = performance.now();
+      vel = (e.clientY - lastY) / Math.max(1, now - lastT);
+      lastY = e.clientY;
+      lastT = now;
+      var dy = e.clientY - startY;
+      movedY = Math.max(movedY, Math.abs(dy));
+      acc = -dy * 1.4; // drag up advances
+      tension = clampT(rubber(acc / (window.innerHeight * RANGE)));
+      if (cursor) {
+        cursor.classList.toggle("lean-up", dy < -2);
+        cursor.classList.toggle("lean-down", dy > 2);
+      }
+    });
+    window.addEventListener("pointerup", function () {
+      if (!dragging) return;
+      dragging = false;
+      if (cursor) cursor.classList.remove("is-grab", "lean-up", "lean-down");
+      if (blocked()) { springBack(); return; }
+      var flung = Math.abs(vel) > FLING_V;
+      if (flung) {
+        commit(vel < 0 ? 1 : -1);
+      } else if (Math.abs(acc) > window.innerHeight * COMMIT_PX) {
+        commit(acc > 0 ? 1 : -1);
+      } else {
+        springBack();
+      }
+    });
+    // A drag must never count as a click on a slide link
+    reel.addEventListener("click", function (e) {
+      if (movedY > 8) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
+
+    // Keyboard
+    window.addEventListener("keydown", function (e) {
+      if (blocked()) return;
+      if (e.key === "ArrowDown" || e.key === "PageDown" || e.key === " ") {
+        e.preventDefault(); commit(1);
+      } else if (e.key === "ArrowUp" || e.key === "PageUp") {
+        e.preventDefault(); commit(-1);
+      } else if (e.key === "Home") {
+        e.preventDefault(); index = 0; tension = 0; syncUI();
+      } else if (e.key === "End") {
+        e.preventDefault(); index = count - 1; tension = 0; syncUI();
+      }
+    });
+
+    gsap.ticker.add(tickFn);
+
+    return {
+      activate: function () {
+        active = true;
+        render(index);
+        syncUI();
+      },
+      deactivate: function () {
+        active = false;
+        killSpring();
+        tension = 0;
+        acc = 0;
+      }
+    };
+  }
+
+  /* ------------------------------------------------------------------
+     Work index: cinema reel <-> contact sheet
+  ------------------------------------------------------------------ */
+  function initWorkToggle(reelApi) {
     var bar = document.querySelector(".view-toggle");
     var grid = document.querySelector(".work-grid");
     if (!bar || !grid) return;
     var chips = bar.querySelectorAll(".chip");
 
-    function setView(view, animate) {
+    // Without the reel (no JS-physics path) only the grid exists
+    if (!reelApi) {
+      var reelChip = bar.querySelector('[data-view="reel"]');
+      if (reelChip) reelChip.style.display = "none";
+    }
+
+    function setView(view, persist) {
+      if (view !== "sheet" && !reelApi) view = "sheet";
       chips.forEach(function (c) {
         c.setAttribute("aria-pressed", String(c.getAttribute("data-view") === view));
       });
-      var state = null;
-      if (animate && hasGsap && window.Flip && !reduceMotion) {
-        state = Flip.getState(grid.querySelectorAll(".work-card"));
+      if (view === "reel") {
+        docEl.classList.add("reel-mode");
+        if (lenis) lenis.stop();
+        reelApi.activate();
+      } else {
+        docEl.classList.remove("reel-mode");
+        if (lenis) lenis.start();
+        if (reelApi) reelApi.deactivate();
+        grid.classList.add("is-sheet");
+        if (window.ScrollTrigger) ScrollTrigger.refresh();
       }
-      grid.classList.toggle("is-sheet", view === "sheet");
-      if (state) {
-        Flip.from(state, { duration: 0.8, ease: "expo.inOut", absolute: true, stagger: 0.02 });
+      if (persist) {
+        try { localStorage.setItem("workview", view); } catch (e) {}
       }
-      if (window.ScrollTrigger) ScrollTrigger.refresh();
-      try { localStorage.setItem("workview", view); } catch (e) {}
     }
 
     chips.forEach(function (chip) {
@@ -700,7 +945,8 @@
 
     var saved = null;
     try { saved = localStorage.getItem("workview"); } catch (e) {}
-    if (saved === "sheet") setView("sheet", false);
+    if (saved === "editorial") saved = "reel"; // legacy value
+    setView(saved === "sheet" ? "sheet" : "reel", false);
   }
 
   /* ------------------------------------------------------------------
@@ -931,7 +1177,8 @@
   ------------------------------------------------------------------ */
   function init() {
     initShuffle();      // reorder before any animation reads the DOM
-    initWorkToggle();   // restore saved view before triggers measure
+    var reelApi = initReel();
+    initWorkToggle(reelApi); // restore saved view before triggers measure
     runIntro();
     initTransitions();
 

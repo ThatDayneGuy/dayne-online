@@ -1483,6 +1483,204 @@ a [data-parallax] .frame img { transition: none; }
 }
 
 /* ==========================================================================
+   Cinema reel (work page)
+   Full-viewport vertical reel with snap physics: wheel/drag/fling past
+   the tension threshold advances a frame, anything short springs back.
+   Outgoing text leads its image; incoming frames sit behind a glass
+   veil until half in. The contact-sheet grid remains the alternate
+   view and the no-JS / reduced-motion fallback.
+   ========================================================================== */
+
+.reel { display: none; }
+
+.reel-mode { overflow: hidden; }
+.reel-mode body { overflow: hidden; height: 100vh; }
+
+.reel-mode .reel {
+  display: block;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+  background: #0c0c0c;
+}
+
+.reel-mode .reel:active { cursor: grabbing; }
+
+.reel-mode .page-head,
+.reel-mode .work-grid-wrap,
+.reel-mode .site-footer { display: none; }
+
+.reel-slide {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+  will-change: transform;
+}
+
+.reel-media {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.reel-media .frame {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+}
+
+/* Legibility scrim under the slide text */
+.reel-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(12, 12, 12, 0.55), transparent 45%);
+}
+
+.reel-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  background: var(--glass-tint);
+  -webkit-backdrop-filter: blur(22px);
+  backdrop-filter: blur(22px);
+}
+
+.reel-info {
+  position: absolute;
+  left: var(--pad);
+  right: var(--pad);
+  bottom: clamp(2rem, 7vh, 4.5rem);
+  z-index: 2;
+  color: #f3f2ef;
+  will-change: transform;
+}
+
+.reel-info .label { color: rgba(243, 242, 239, 0.7); }
+
+.reel-title {
+  font-size: clamp(3rem, 10vw, 8.5rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 0.92;
+  text-transform: uppercase;
+  margin: 0.3rem 0 0;
+}
+
+.reel-sub {
+  margin-top: 1rem;
+  max-width: 28rem;
+  font-size: var(--text-sm);
+  color: rgba(243, 242, 239, 0.75);
+}
+
+/* Counter, rail, hint */
+.reel-counter {
+  position: absolute;
+  right: var(--pad);
+  bottom: clamp(2rem, 7vh, 4.5rem);
+  z-index: 3;
+  display: flex;
+  align-items: baseline;
+  gap: 0.45em;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: #f3f2ef;
+}
+
+.reel-counter .reel-sep, .reel-counter .reel-total { color: rgba(243, 242, 239, 0.5); }
+
+.reel-num {
+  display: block;
+  height: 1em;
+  line-height: 1;
+  overflow: hidden;
+}
+
+.reel-num-col { display: block; will-change: transform; }
+.reel-num-col span { display: block; height: 1em; line-height: 1; }
+
+.reel-rail {
+  position: absolute;
+  right: var(--pad);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reel-rail span {
+  width: 2px;
+  height: 22px;
+  background: rgba(243, 242, 239, 0.35);
+  transition: height 0.5s var(--ease), background 0.3s ease;
+}
+
+.reel-rail span.is-on {
+  height: 44px;
+  background: #f3f2ef;
+}
+
+.reel-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 1.2rem;
+  transform: translateX(-50%);
+  z-index: 3;
+  color: rgba(243, 242, 239, 0.6);
+}
+
+/* The view toggle floats on the work page so it's reachable from both
+   the reel and the scrolling grid */
+.view-toggle {
+  position: fixed;
+  left: var(--pad);
+  bottom: 1.4rem;
+  z-index: 35;
+  margin: 0;
+}
+
+.reel-mode .view-toggle .chip {
+  color: rgba(243, 242, 239, 0.8);
+  border-color: rgba(243, 242, 239, 0.3);
+}
+
+.reel-mode .view-toggle .chip[aria-pressed="true"] {
+  color: #0c0c0c;
+  background: #f3f2ef;
+  border-color: #f3f2ef;
+}
+
+/* Cursor: grab state with directional chevrons while dragging the reel */
+.cursor::before,
+.cursor::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.cursor::before { top: 9px; border-bottom: 6px solid #0c0c0c; }
+.cursor::after { bottom: 9px; border-top: 6px solid #0c0c0c; }
+
+.cursor.is-grab { width: 56px; height: 56px; }
+.cursor.is-grab .cursor-label { opacity: 0; }
+.cursor.is-grab::before, .cursor.is-grab::after { opacity: 0.45; }
+.cursor.is-grab.lean-up::before { opacity: 1; transform: translateX(-50%) translateY(-3px); }
+.cursor.is-grab.lean-down::after { opacity: 1; transform: translateX(-50%) translateY(3px); }
+
+/* ==========================================================================
    Motion preferences
    ========================================================================== */
 
