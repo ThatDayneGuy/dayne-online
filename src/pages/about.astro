@@ -1,0 +1,42 @@
+---
+import Base from "../layouts/Base.astro";
+import Pic from "../components/Pic.astro";
+---
+<Base
+  title="About — Dayne"
+  description="About Dayne — photographer and occasional writer. Commissions, prints and collaborations welcome."
+  ogImage="https://picsum.photos/seed/dayne-portrait/1200/630?grayscale"
+  path="/about.html"
+  ogType="profile"
+  current="about"
+>
+  <main id="main" tabindex="-1">
+    <section class="page-head wrap">
+      <h1 data-title-reveal><span class="line">About</span></h1>
+    </section>
+
+    <section class="wrap section-end">
+      <div class="about-grid">
+        <div class="portrait">
+          <div class="frame" data-reveal-img data-parallax>
+            <Pic src="https://picsum.photos/seed/dayne-portrait/1200/1600?grayscale" alt="Portrait of Dayne" />
+          </div>
+        </div>
+
+        <div class="about-copy">
+          <p class="statement" data-split-words>Test text test text test text test text test text <span class="serif-i">test text test text.</span></p>
+
+          <p class="bio" data-reveal>Test text test text test text test text test text.</p>
+          <p class="bio" data-reveal>Test text test text test text test text test text.</p>
+
+          <ul class="about-list" data-reveal>
+            <li><strong>Test text</strong><span class="label">test text</span></li>
+            <li><strong>Test text</strong><span class="label">test text</span></li>
+            <li><strong>Test text</strong><span class="label">test text</span></li>
+            <li><strong>Test text</strong><a class="label label-link" href="mailto:me@dayne.online">me@dayne.online</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+</Base>

@@ -1,0 +1,40 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../layouts/Base.astro";
+
+const posts = (await getCollection("journal"))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const rowDate = (d: Date) =>
+  d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+---
+<Base
+  title="Journal — Dayne"
+  description="Musings, field notes, essays and half-formed ideas from photographer Dayne."
+  ogImage="https://picsum.photos/seed/dayne-j1/1200/630?grayscale"
+  path="/journal.html"
+  current="journal"
+>
+  <main id="main" tabindex="-1">
+    <section class="page-head wrap">
+      <h1 data-title-reveal><span class="line">Journal</span></h1>
+      <p class="sub" data-reveal>Test text test text test text.</p>
+    </section>
+
+    <section class="wrap section-end">
+      <div class="filter-bar" data-filter aria-label="Filter entries"></div>
+
+      <div class="row-list" data-reveal>
+        {posts.map((p) => (
+          <a class="row" href={`/journal/${p.id}.html`} data-img={p.data.preview}>
+            <span class="date">{rowDate(p.data.date)}</span>
+            <span class="title">{p.data.title}</span>
+            <span class="tag">{p.data.category}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  </main>
+
+  <div class="list-preview" aria-hidden="true"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="" /></div>
+</Base>

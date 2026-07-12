@@ -1,0 +1,94 @@
+---
+import { getCollection, getEntry } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import Pic from "../../components/Pic.astro";
+import Related from "../../components/Related.astro";
+
+export async function getStaticPaths() {
+  const series = await getCollection("work");
+  return series.map((s) => ({ params: { slug: s.id }, props: { series: s } }));
+}
+
+const { series } = Astro.props;
+const d = series.data;
+
+const next = await getEntry("work", d.next);
+const journal = d.journal ? await getEntry("journal", d.journal) : null;
+---
+<Base
+  title={`${d.title} — Dayne`}
+  description={d.description}
+  ogImage={d.cover.replace(/\/\d+\/\d+\?/, "/1200/630?")}
+  path={`/work/${series.id}.html`}
+  ogType="article"
+  current="work"
+>
+  <Fragment slot="head">
+    <script is:inline>
+    // Accept the View Transitions cover morph when arriving from a tagged
+    // thumbnail (flag set just before navigation on the previous page).
+    // Must run before first paint, hence the head slot.
+    try {
+      if (sessionStorage.getItem("vt")) {
+        document.documentElement.classList.add("vt-in");
+        sessionStorage.removeItem("vt");
+      }
+    } catch (e) {}
+    </script>
+  </Fragment>
+  <main id="main" tabindex="-1">
+    <section class="project-head wrap">
+      <h1 data-title-reveal><span class="line">{d.title}</span></h1>
+      <dl class="project-meta" data-reveal>
+        <div><dt>Year</dt><dd>{d.year}</dd></div>
+        <div><dt>Frames</dt><dd>{d.frames}</dd></div>
+        <div><dt>Format</dt><dd>{d.format}</dd></div>
+        <div><dt>Status</dt><dd>{d.status}</dd></div>
+      </dl>
+    </section>
+
+    <div class="project-cover wrap">
+      <div class="frame" data-reveal-img data-parallax>
+        <Pic src={d.cover} alt={d.coverAlt} sizes="100vw" eager />
+      </div>
+    </div>
+
+    <section class="h-scroll" aria-label="Series film strip">
+      <div class="h-track">
+        {d.strip.map((item) => (
+          <div class={item.tall ? "h-item tall" : "h-item"}>
+            <div class="frame"><Pic src={item.src} alt={item.alt} /></div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <div class="project-body wrap">
+      <p class="project-note" data-split-words set:html={d.note} />
+
+      {d.images.map((img) => (
+        <div class={img.slot} data-reveal-img data-parallax>
+          <div class="frame"><Pic src={img.src} alt={img.alt} /></div>
+        </div>
+      ))}
+    </div>
+
+    {journal && (
+      <div class="wrap pad-end-sm">
+        <Related
+          href={`/journal/${journal.id}.html`}
+          label="From the journal"
+          title={journal.data.title}
+          thumb={journal.data.preview.replace(/\/\d+\/\d+\?/, "/400/400?")}
+        />
+      </div>
+    )}
+
+    {next && (
+      <a class="next-project wrap" href={`/work/${next.id}.html`}>
+        <span class="label">Next series</span>
+        <span class="next-title">{next.data.title}</span>
+      </a>
+    )}
+  </main>
+</Base>

@@ -1,0 +1,47 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../layouts/Base.astro";
+
+// The archive shows every frame from everywhere: each series contributes
+// its cover and first body image, each journal entry its preview, plus
+// the home hero. Items link back to where the frame lives.
+const series = (await getCollection("work")).sort((a, b) => a.data.order - b.data.order);
+const posts = (await getCollection("journal"))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const square = (src: string) => src.replace(/\/\d+\/\d+\?/, "/800/533?");
+
+const items: { href: string; src: string; alt: string }[] = [];
+for (const s of series) {
+  items.push({ href: `/work/${s.id}.html`, src: square(s.data.cover), alt: s.data.coverAlt });
+}
+for (const s of series) {
+  items.push({ href: `/work/${s.id}.html`, src: square(s.data.images[0].src), alt: s.data.images[0].alt });
+}
+for (const p of posts) {
+  items.push({ href: `/journal/${p.id}.html`, src: square(p.data.preview), alt: "From the journal" });
+}
+items.push({ href: "/index.html", src: "https://picsum.photos/seed/dayne-hero/800/533?grayscale", alt: "Wide monochrome landscape" });
+---
+<Base
+  title="Archive — Dayne"
+  description="The full photographic archive of Dayne — every frame, one endless contact sheet."
+  ogImage="https://picsum.photos/seed/dayne-w2/1200/630?grayscale"
+  path="/archive.html"
+  current="archive"
+  bodyClass="archive-page"
+  footer={false}
+>
+  <main id="main" tabindex="-1" data-archive data-cursor="Drag">
+    <div class="archive-canvas">
+      <div class="archive-grid">
+        {items.map((item) => (
+          <a class="ar-item" href={item.href}>
+            <div class="frame"><img src={item.src} alt={item.alt} loading="lazy" width="800" height="533" decoding="async" /></div>
+          </a>
+        ))}
+      </div>
+    </div>
+    <p class="archive-hint label">Drag to explore &mdash; click a frame to visit</p>
+  </main>
+</Base>

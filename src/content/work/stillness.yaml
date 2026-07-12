@@ -1,0 +1,46 @@
+title: "Test text"
+order: 2
+featured: true
+year: "2024"
+frames: "11"
+format: "Medium format, monochrome"
+status: "Complete"
+description: "Stillness — a photographic series by Dayne."
+cardLabel: "test text"
+cover: "https://picsum.photos/seed/dayne-w2/2400/1350?grayscale"
+coverAlt: "A still, empty landscape under flat light"
+note: 'Test text test text test text test text test text <span class="serif-i">test text test text.</span>'
+strip:
+  - src: "https://picsum.photos/seed/dayne-s6/1600/1067?grayscale"
+    alt: "Photograph from this series"
+    tall: false
+  - src: "https://picsum.photos/seed/dayne-s7/1200/1600?grayscale"
+    alt: "Photograph from this series"
+    tall: true
+  - src: "https://picsum.photos/seed/dayne-s8/1600/1067?grayscale"
+    alt: "Photograph from this series"
+    tall: false
+  - src: "https://picsum.photos/seed/dayne-s9/1200/1600?grayscale"
+    alt: "Photograph from this series"
+    tall: true
+  - src: "https://picsum.photos/seed/dayne-s10/1600/1067?grayscale"
+    alt: "Photograph from this series"
+    tall: false
+images:
+  - src: "https://picsum.photos/seed/dayne-s1/1600/1200?grayscale"
+    alt: "Photograph from this series"
+    slot: "left"
+  - src: "https://picsum.photos/seed/dayne-s2/1200/1600?grayscale"
+    alt: "Photograph from this series"
+    slot: "small-right"
+  - src: "https://picsum.photos/seed/dayne-s3/2400/1350?grayscale"
+    alt: "Photograph from this series"
+    slot: "full"
+  - src: "https://picsum.photos/seed/dayne-s4/1200/1600?grayscale"
+    alt: "Photograph from this series"
+    slot: "small-left"
+  - src: "https://picsum.photos/seed/dayne-s5/1600/1200?grayscale"
+    alt: "Photograph from this series"
+    slot: "right"
+journal: "why-black-and-white"
+next: "soft-static"

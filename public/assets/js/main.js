@@ -333,8 +333,14 @@
   function initScrollAnimations() {
     if (!hasGsap || !window.ScrollTrigger || reduceMotion) return;
 
-    // Generic fade-up
-    document.querySelectorAll("[data-reveal]").forEach(function (el) {
+    // Generic fade-up. Journal bodies are rendered from Markdown and
+    // don't carry the attribute, so their direct children are included
+    // automatically.
+    var revealEls = Array.prototype.slice.call(document.querySelectorAll("[data-reveal]"));
+    document.querySelectorAll(".post-body > *").forEach(function (el) {
+      if (revealEls.indexOf(el) === -1) revealEls.push(el);
+    });
+    revealEls.forEach(function (el) {
       gsap.from(el, {
         opacity: 0,
         y: 40,

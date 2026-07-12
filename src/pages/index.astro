@@ -1,0 +1,109 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../layouts/Base.astro";
+import Pic from "../components/Pic.astro";
+
+const HERO = "https://picsum.photos/seed/dayne-hero/2400/1350?grayscale";
+
+const featured = (await getCollection("work", (s) => s.data.featured))
+  .sort((a, b) => a.data.order - b.data.order);
+
+const latest = (await getCollection("journal"))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 3);
+
+const rowDate = (d: Date) =>
+  d.toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+---
+<Base
+  title="Dayne — Photographer & Writer"
+  description="The photography portfolio and journal of Dayne. Quiet photographs, occasional words."
+  ogImage="https://picsum.photos/seed/dayne-hero/1200/630?grayscale"
+  path="/"
+  home
+>
+  <main id="main" tabindex="-1">
+    <!-- Hero -->
+    <section class="hero">
+      <h1 class="hero-title" data-hero-title>
+        <span class="line">Dayne</span>
+      </h1>
+      <div class="hero-meta">
+        <span class="label status"><span class="status-dot" aria-hidden="true"></span>test text test text</span>
+        <span class="label serif-i hero-note">test text test text</span>
+        <span class="label">test text test text</span>
+      </div>
+      <span class="hero-scroll label" aria-hidden="true">Scroll</span>
+    </section>
+
+    <div class="hero-figure" data-scale-in>
+      <div class="frame" data-parallax>
+        <Pic src={HERO} alt="Wide monochrome landscape photograph" sizes="100vw" eager />
+      </div>
+    </div>
+
+    <!-- Statement -->
+    <section class="section wrap">
+      <p class="label label-block" data-reveal>test text</p>
+      <p class="statement" data-split-words>Test text test text test text test text test text <span class="serif-i">test text test text.</span></p>
+      <p class="statement-foot" data-reveal>Test text test text test text test text test text.</p>
+    </section>
+
+    <!-- Selected work -->
+    <section class="section wrap" data-shuffle>
+      <div class="section-head" data-reveal>
+        <h2>Selected work</h2>
+        <a class="label label-link" href="/work.html">All work</a>
+      </div>
+
+      {featured.map((s, i) => (
+        <article class="feature">
+          <a class="feature-media" href={`/work/${s.id}.html`} data-cursor="View" data-vt aria-label={`View this series`}>
+            <div class="frame" data-reveal-img data-parallax>
+              <Pic src={s.data.cover} alt={s.data.coverAlt} />
+            </div>
+          </a>
+          <div class="feature-info" data-reveal>
+            <span class="index">&#8470; {String(i + 1).padStart(2, "0")} &mdash; {s.data.year}</span>
+            <h3>{s.data.title}</h3>
+            <p>{s.data.cardLabel === "test text" ? "Test text test text test text." : s.data.description}</p>
+            <a class="more" href={`/work/${s.id}.html`}>View series</a>
+          </div>
+        </article>
+      ))}
+    </section>
+
+    <!-- Marquee -->
+    <a class="marquee" href="/work.html" aria-label="View the portfolio">
+      <div class="marquee-track">
+        <span>Test text</span><span class="serif-i">test text</span><span>Test text</span><span class="serif-i">test text</span>
+        <span aria-hidden="true">Test text</span><span class="serif-i" aria-hidden="true">test text</span><span aria-hidden="true">Test text</span><span class="serif-i" aria-hidden="true">test text</span>
+      </div>
+    </a>
+
+    <!-- Journal preview -->
+    <section class="section wrap">
+      <div class="section-head" data-reveal>
+        <h2>From the journal</h2>
+        <a class="label label-link" href="/journal.html">All entries</a>
+      </div>
+
+      <div class="row-list" data-reveal>
+        {latest.map((p) => (
+          <a class="row" href={`/journal/${p.id}.html`} data-img={p.data.preview}>
+            <span class="date">{rowDate(p.data.date)}</span>
+            <span class="title">{p.data.title}</span>
+            <span class="tag">{p.data.category}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  </main>
+
+  <div class="list-preview" aria-hidden="true"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="" /></div>
+
+  <div class="screensaver" aria-hidden="true">
+    <div class="frame"><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="" /></div>
+    <span class="label">Idle &mdash; move to wake</span>
+  </div>
+</Base>
