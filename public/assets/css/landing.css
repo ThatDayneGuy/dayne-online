@@ -2,9 +2,10 @@
    dayne.online — temporary landing page (brutalist / striped type)
    Flat ink on paper. The ruled sheet, the looping line of barred type
    and the striped sun are drawn by landing.js on one canvas; this file
-   handles the counter, the two links, and the no-JS fallback (the same
-   bars via a gradient clipped to the text, on plain CSS rules). State
-   classes on <html>: .js (script expected), .live (counter done).
+   handles the two links, the night colours the page opens in, and the
+   no-JS fallback (the same bars via a gradient clipped to the text, on
+   plain CSS rules). State classes on <html>: .js (script expected),
+   .day (the sunrise is over).
    ========================================================================== */
 
 :root {
@@ -13,6 +14,10 @@
   --paper: #f2f1ec;
   --ink: #0d0d0d;
   --rule: rgba(13, 13, 13, 0.14);
+  /* Night, before the sunrise: the same sheet in pale ink on black */
+  --night: #0d0d0d;
+  --night-ink: #f2f1ec;
+  --night-rule: rgba(242, 241, 236, 0.16);
 
   --display: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --mono: "Fragment Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -45,6 +50,9 @@ body {
 html:not(.js) body {
   background-image: repeating-linear-gradient(to bottom, transparent 0 calc(1.25rem - 1px), var(--rule) calc(1.25rem - 1px) 1.25rem);
 }
+
+/* Until daybreak the page is night, so nothing flashes paper first */
+.js:not(.day) body { background: var(--night); }
 
 a { color: inherit; text-decoration: none; }
 ::selection { background: var(--ink); color: var(--paper); }
@@ -106,24 +114,6 @@ a { color: inherit; text-decoration: none; }
   white-space: nowrap;
 }
 
-/* ---------- Counter ---------- */
-
-.counter { display: none; }
-
-.js .counter {
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  z-index: 3;
-  transform: translate(-50%, -50%);
-  display: block;
-  font-size: var(--text-xs);
-  letter-spacing: 0.08em;
-  font-variant-numeric: tabular-nums;
-}
-
-.js.live .counter { visibility: hidden; }
-
 /* ---------- Links ---------- */
 
 .links {
@@ -157,12 +147,11 @@ a { color: inherit; text-decoration: none; }
 }
 
 .js .links { opacity: 0; }
-.js.live .links { opacity: 1; transition: opacity 0.6s ease 0.9s; }
+.js.day .links { opacity: 1; transition: opacity 0.6s ease 0.2s; }
 
 /* ---------- Reduced motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {
-  .js .counter { display: none; }
   .js .links { opacity: 1; transition: none; }
   .links a { transition: none; }
 }

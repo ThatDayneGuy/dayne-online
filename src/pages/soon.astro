@@ -2,9 +2,10 @@
 // Temporary landing page (brutalist / striped type). Standalone on purpose:
 // it does not use Base.astro, so it carries none of the site's header,
 // menu, transitions or GSAP stack. Styling lives in /assets/css/landing.css
-// and motion in /assets/js/landing.js: a counter, then one giant looping
-// line of heavy type cut into horizontal bars (after the IBM 8-bar logo).
-// Scrolling drives the line sideways and shears the bars apart.
+// and motion in /assets/js/landing.js: a night-to-day sunrise, then one
+// giant looping line of heavy type cut into horizontal bars (after the IBM
+// 8-bar logo) under a striped sun. Scrolling drives the line sideways and
+// shears the bars apart.
 // The real text stays in the DOM for screen readers and no-JS.
 // To make it live, render this page as the home page.
 const FAVICON =
@@ -39,8 +40,6 @@ const FAVICON =
 </head>
 <body>
     <canvas class="screen" aria-hidden="true" data-screen></canvas>
-
-    <div class="counter" aria-hidden="true" data-pct>000</div>
 
     <main class="stage" id="main">
         <h1 class="title">dayne.online</h1>
