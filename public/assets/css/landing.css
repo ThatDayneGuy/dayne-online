@@ -40,6 +40,11 @@ body {
   touch-action: none; /* the page never scrolls; touches drive the line */
 }
 
+/* No-JS view: plain scanlines stand in for the drawn ones */
+html:not(.js) body {
+  background-image: repeating-linear-gradient(to bottom, transparent 0 calc(0.5rem - 1px), rgba(0, 0, 0, 0.13) calc(0.5rem - 1px) 0.5rem);
+}
+
 a { color: inherit; text-decoration: none; }
 ::selection { background: var(--ink); color: var(--paper); }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }

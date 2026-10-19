@@ -15,6 +15,9 @@
    carries a round lens. It spins slowly, and faster as you scroll. At the
    end of loading it turns to face you and the shutter clicks: the lens
    closes, the page flashes black, and the line appears.
+   Behind it all, faint scanlines run across the page on the same raster
+   as the bars (through every bar and every gap), with a slightly darker
+   band rolling slowly down the screen like an old monitor's refresh.
    The type is rendered once into an offscreen strip; each frame draws that
    strip bar by bar, so every bar edge lands on a whole device pixel.
    No dependencies. Reduced motion: no counter, a still line, no loop.
@@ -59,6 +62,8 @@
   var cubeS = 10, cubeY = 0; // the cube in the line: half-edge, centre y
   var spin = 0.6; // the cube's rotation, radians
   var shutter = 0; // 0 = lens open .. 1 = closed
+  var rasterBase = 0; // screen y of the baseline: the scanlines hang off it
+  var clock = 0; // ms, drives the rolling band
 
   /* ------------------------------------------------------------------
      The logo: a box camera in bars
@@ -226,6 +231,7 @@
 
     // Centre the x-height band on the screen
     stripTop = Math.round(h / 2 - (baseline - xh / 2));
+    rasterBase = stripTop + baseline;
     cubeY = stripTop + baseline - ascent / 2;
 
     // The loader's cube, bigger, with the counter under it
@@ -257,10 +263,31 @@
 
   var loaderS = 20;
 
+  // Scanlines: a hairline through the middle of every bar slot and every
+  // gap (every slot only, where that would pack them closer than 4px),
+  // faint, and a little darker inside the rolling band
+  var SCAN = 0.13, BAND = 0.14; // line opacity, extra opacity in the band
+  var ROLL_MS = 9000; // the band's trip from top to bottom
+  function drawScanlines() {
+    var step = pitch / 2 >= 4 ? pitch / 2 : pitch;
+    var hair = Math.max(1, Math.round(dpr));
+    var y0 = rasterBase - thick / 2; // the middle of the baseline slot
+    var y = y0 - Math.ceil(y0 / step) * step;
+    var bandH = h * 0.12, bandY = reduceMotion ? -1e9 : (clock % ROLL_MS) / ROLL_MS * (h + bandH * 4) - bandH * 2;
+    ctx.fillStyle = INK;
+    for (; y < h; y += step) {
+      var d = (y - bandY) / bandH;
+      ctx.globalAlpha = SCAN + BAND * Math.exp(-d * d);
+      ctx.fillRect(0, Math.round(y * dpr - hair / 2), canvas.width, hair);
+    }
+    ctx.globalAlpha = 1;
+  }
+
   // The loader: the cube alone in the middle, on its own bar raster
   function drawLoader() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawScanlines();
     ctx.fillStyle = INK;
     var faces = cubeFaces(spin), cy = h / 2, reach = loaderS * 1.8;
     var lp = Math.max(3.5, loaderS / 7), saved = thick;
@@ -283,6 +310,7 @@
   function draw(reveal) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawScanlines();
     var W = canvas.width;
     var periodD = period * dpr;
     var f = dpr / scale; // strip px -> device px
@@ -399,6 +427,7 @@
     function frame(now) {
       var t = now - t0;
       var k = Math.min(50, now - prev) / 16.7;
+      clock = t;
       prev = now;
 
       if (!revealAt) {
