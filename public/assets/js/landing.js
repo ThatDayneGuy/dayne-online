@@ -144,7 +144,7 @@
 
     // The sun rests centred in the space above the type
     var typeTop = stripTop + (bars.length ? bars[0].top : 0);
-    sun.r = Math.max(24, Math.min(typeTop * 0.42, w * 0.22));
+    sun.r = Math.max(24, Math.min(typeTop * 0.36, w * 0.2));
     sun.homeX = w / 2;
     sun.homeY = typeTop / 2;
     if (!sun.placed || reduceMotion) {
