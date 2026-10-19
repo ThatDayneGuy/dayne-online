@@ -1,11 +1,13 @@
 /* ==========================================================================
-   dayne.online — temporary landing page motion (pixel / cyberpunk)
+   dayne.online — temporary landing page motion (green-phosphor terminal)
    One canvas, one list of pixel particles:
    1. Boot: the pixel "D" logo flickers on while the loader bar fills
    2. Morph: the logo bursts and its pixels fly into "Dayne.online"
    3. Live: pixels spring home, scatter away from the pointer, and the
-      title glitches (RGB split + sliced rows) every few seconds
-   Moving pixels leave cyan/magenta fringes proportional to their speed.
+      title glitches (ghosting, sliced rows, vertical-hold slip) every
+      few seconds
+   The canvas fades rather than clears each frame, so moving pixels leave
+   phosphor trails, plus a dim ghost proportional to their speed.
    No dependencies. Reduced motion: no loader, static title, no loop.
    ========================================================================== */
 
@@ -22,9 +24,8 @@
 
   var css = getComputedStyle(docEl);
   function token(name, fallback) { return (css.getPropertyValue(name) || fallback).trim(); }
-  var INK = token("--ink", "#eaf6ff");
-  var CYAN = token("--cyan", "#00e5ff");
-  var MAGENTA = token("--magenta", "#ff2bd6");
+  var PHOSPHOR = token("--phosphor", "#3cf06e");
+  var DIM = token("--dim", "#1d7a3d");
 
   /* ------------------------------------------------------------------
      Bitmaps. Glyphs sit on a 9-row grid: rows 0-1 ascender, 2-6 x-height,
@@ -113,6 +114,7 @@
     h = window.innerHeight;
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
+    hardClear = true;
 
     TXT = w < 640 && h > w ? STACKED : WIDE;
     var gutter = Math.max(16, w * 0.025);
@@ -168,10 +170,14 @@
      DOM helpers: loader bar, clock, typed tagline
   ------------------------------------------------------------------ */
   var segs = document.querySelectorAll(".loader-bar i");
+  var logLines = document.querySelectorAll(".loader-log li");
   var pctEl = document.querySelector("[data-pct]");
   function setProgress(p) {
     var lit = Math.round(p * segs.length);
     for (var i = 0; i < segs.length; i++) segs[i].classList.toggle("on", i < lit);
+    for (var j = 0; j < logLines.length; j++) {
+      logLines[j].classList.toggle("on", p >= parseFloat(logLines[j].getAttribute("data-at")));
+    }
     if (pctEl) pctEl.textContent = ("00" + Math.round(p * 100)).slice(-3) + "%";
   }
 
@@ -202,22 +208,29 @@
   ------------------------------------------------------------------ */
   var glitch = { until: 0, next: 0, split: 0 };
 
-  function drawPixel(x, y, size, split) {
-    if (split > 0.4) {
-      ctx.globalCompositeOperation = "lighter";
-      ctx.fillStyle = CYAN;
-      ctx.fillRect(x - split, y, size, size);
-      ctx.fillStyle = MAGENTA;
-      ctx.fillRect(x + split, y, size, size);
-      ctx.globalCompositeOperation = "source-over";
+  function drawPixel(x, y, size, ghost) {
+    if (ghost > 0.4) {
+      ctx.fillStyle = DIM;
+      ctx.fillRect(x - ghost, y, size, size);
+      ctx.fillRect(x + ghost * 0.6, y, size, size);
     }
-    ctx.fillStyle = INK;
+    ctx.fillStyle = PHOSPHOR;
     ctx.fillRect(x, y, size, size);
   }
 
+  // Phosphor persistence: fade the last frame instead of wiping it
+  var hardClear = true;
   function clear() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
+    if (hardClear || reduceMotion) {
+      ctx.clearRect(0, 0, w, h);
+      hardClear = false;
+      return;
+    }
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalCompositeOperation = "source-over";
   }
 
   // Boot frame: logo pixels flicker on, then the logo glitches at 100%
@@ -252,6 +265,11 @@
       // Slice a couple of row bands sideways
       var a = Math.floor(Math.random() * TXT.rows), b = a + 1 + Math.floor(Math.random() * 3);
       var s = (Math.random() < 0.5 ? -1 : 1) * cs * (1 + Math.floor(Math.random() * 3));
+      // Every other glitch, the vertical hold slips too
+      if (Math.random() < 0.5) {
+        docEl.classList.add("jolt");
+        setTimeout(function () { docEl.classList.remove("jolt"); }, 110);
+      }
       for (var g = 0; g < parts.length; g++) {
         parts[g].shift = parts[g].cell.r >= a && parts[g].cell.r < b ? s : 0;
       }
