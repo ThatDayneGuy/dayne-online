@@ -4,7 +4,7 @@
    1. Boot: the pixel "D" logo flickers on while a one-line boot status
       counts to 100%
    2. Burst: the logo's pixels fly out and settle into one giant line of
-      pixel text ("Dayne.online — Photographs — Writing — Coming soon —")
+      pixel text ("dayne.online — coming soon —", endlessly repeated)
    3. Live: the line loops forever, drifting left. Scrolling (wheel, drag,
       arrow keys) pushes it sideways with momentum; the faster it moves the
       longer its phosphor trail and the more pixel dust it sheds below.
@@ -34,31 +34,25 @@
      the glyph is listed in WIDTHS.
   ------------------------------------------------------------------ */
   var GLYPHS = {
-    "D": ["####.", "#...#", "#...#", "#...#", "#...#", "#...#", "####."],
-    "P": ["####.", "#...#", "#...#", "####.", "#....", "#....", "#...."],
-    "W": ["#...#", "#...#", "#...#", "#.#.#", "#.#.#", "##.##", "#...#"],
-    "C": [".####", "#....", "#....", "#....", "#....", "#....", ".####"],
     "a": ["", "", ".###.", "....#", ".####", "#...#", ".####"],
+    "c": ["", "", ".####", "#....", "#....", "#....", ".####"],
+    "d": ["....#", "....#", ".####", "#...#", "#...#", "#...#", ".####"],
     "e": ["", "", ".###.", "#...#", "#####", "#....", ".####"],
     "g": ["", "", ".####", "#...#", "#...#", "#...#", ".####", "....#", ".###."],
-    "h": ["#....", "#....", "####.", "#...#", "#...#", "#...#", "#...#"],
     "i": [".#.", "", "##.", ".#.", ".#.", ".#.", "###"],
     "l": ["##.", ".#.", ".#.", ".#.", ".#.", ".#.", "###"],
     "m": ["", "", "##.#.", "#.#.#", "#.#.#", "#.#.#", "#.#.#"],
     "n": ["", "", "####.", "#...#", "#...#", "#...#", "#...#"],
     "o": ["", "", ".###.", "#...#", "#...#", "#...#", ".###."],
-    "p": ["", "", "####.", "#...#", "#...#", "#...#", "####.", "#....", "#...."],
-    "r": ["", "", "#.##", "##..", "#...", "#...", "#..."],
     "s": ["", "", ".####", "#....", ".###.", "....#", "####."],
-    "t": ["", ".#..", "####", ".#..", ".#..", ".#..", "..##"],
     "y": ["", "", "#...#", "#...#", "#...#", "#...#", ".####", "....#", ".###."],
     ".": ["", "", "", "", "", "", "#"],
     "—": ["", "", "", "", "#######"],
     " ": [""]
   };
   var WIDTHS = { " ": 3 };
-  var NAME = "Dayne.online";
-  var LINE = NAME + " — Photographs — Writing — Coming soon — ";
+  var NAME = "dayne.online";
+  var LINE = NAME + " — coming soon — ";
   var ROWS = 9;
 
   // The boot logo: a heavy pixel D with a cut-out counter
@@ -124,7 +118,7 @@
     canvas.height = Math.round(h * dpr);
     hardClear = true;
 
-    // Big, but never so big that "Dayne.online" can't fit the opening frame
+    // Big, but never so big that "dayne.online" can't fit the opening frame
     cs = Math.max(4, Math.floor(Math.min(h * 0.019, w * 0.9 / NAME_COLS, 20)));
     oy = Math.round(h / 2 - 3.5 * cs);
     offset *= cs / prevCs; // keep the same spot in the line on resize
@@ -234,7 +228,7 @@
   ------------------------------------------------------------------ */
   var glitch = { until: 0, next: 0, ghost: 0, a: 0, b: 0, shift: 0 };
 
-  // Open with "Dayne.online" centred; the rest of the loop runs off-screen
+  // Open with "dayne.online" centred; the rest of the loop runs off-screen
   function startOffset() {
     return Math.round((w - NAME_COLS * cs) / 2);
   }
