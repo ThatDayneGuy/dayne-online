@@ -10,12 +10,16 @@
      letters read as paper cut out of the sun
    Sequence (the birth of the sun is the loader), all in the bar language:
    1. Void: the page fades up from black
-   2. Big bang: one point flashes where the sun will be and bursts into a
+   2. Big bang: one point flares where the sun will be and bursts into a
       cloud of bar fragments flying outward
-   3. Nebula: the fragments slow, swirl and fall back in under gravity
-   4. Protostar: a striped disc condenses out of them, flickering as it grows
-   5. Ignition: a striped shock ring blasts outward and the sheet and the
-      type wipe in with it, slot by slot, alternating left and right
+   3. Nebula: the cloud flattens into a disc and visibly spins, inner
+      fragments faster than outer ones (as orbits do), drawing inward
+   4. Protostar: a core forms at the centre and grows in three heartbeat
+      pulses while the last fragments spiral into it
+   5. Ignition: the core collapses for a beat, then detonates: a white
+      flash, three shock rings past the screen edges, the screen shakes,
+      the star snaps to full size, and the sheet and the type wipe in
+      slot by slot, alternating left and right
    6. Sunrise: the sun climbs slowly (8s) from behind the line to its place
       above it. Daylight spreads out from the sun in a growing circle,
       day colours inside, night outside, until the whole page is day.
@@ -294,11 +298,10 @@
      ignition. Drawn over the night scene only.
   ------------------------------------------------------------------ */
   var SPECKS = [];
-  for (var n = 0; n < 110; n++) {
+  for (var n = 0; n < 220; n++) {
     SPECKS.push({
       a: n * 2.39996, // golden angle: an even spray with no clumps
-      s: 0.3 + Math.random() * 0.7, // how far it flies
-      spin: (n % 2 ? 1 : -1) * (0.5 + Math.random() * 0.9) // swirl on the way back
+      s: 0.25 + Math.random() * 0.75 // how far out it flies, 0..1 of the reach
     });
   }
 
@@ -314,6 +317,17 @@
     c.fillRect(Math.round(x1 * dpr), Math.round(y * dpr - t / 2), Math.max(1, Math.round((x2 - x1) * dpr)), t);
   }
 
+  // A striped ring between radii ri and ro, centred on (cx, cy)
+  function ring(c, cx, cy, ri, ro, th) {
+    for (var k = 0; k < rows.length; k++) {
+      var my = rows[k].top + thick / 2, dy = my - cy;
+      if (Math.abs(dy) >= ro) continue;
+      var ho = Math.sqrt(ro * ro - dy * dy), hi = Math.abs(dy) < ri ? Math.sqrt(ri * ri - dy * dy) : 0;
+      bar(c, cx - ho, cx - hi, my, th);
+      bar(c, cx + hi, cx + ho, my, th);
+    }
+  }
+
   function drawBirth(c, ink, tb) {
     c.setTransform(1, 0, 0, 1, 0, 0);
     c.globalCompositeOperation = "source-over";
@@ -321,43 +335,66 @@
     var cx = sun.x, cy = sun.startY;
     var reach = Math.min(w, h) * 0.45;
 
-    // The point, flaring before it bursts
+    // Big bang: the point flares, then bursts
     if (tb >= 0 && tb < BANG.burst) {
       var fl = ease(tb / BANG.burst);
-      bar(c, cx - thick * (0.5 + fl * 2.5), cx + thick * (0.5 + fl * 2.5), slotMid(cy), thick * (0.4 + fl * 0.6));
+      bar(c, cx - thick * (0.5 + fl * 3), cx + thick * (0.5 + fl * 3), slotMid(cy), thick * (0.4 + fl * 0.8));
     }
 
-    // Specks: out, then back in along a spiral
+    // The fragments: out (burst), round and round (nebula), in (protostar)
     var p1 = clamp((tb - BANG.burst) / BANG.out, 0, 1);
-    var p2 = clamp((tb - BANG.burst - BANG.out) / BANG.back, 0, 1);
-    if (tb >= BANG.burst && p2 < 1) {
-      c.globalAlpha = p2 > 0.75 ? (1 - p2) / 0.25 : 1;
+    var p2 = clamp((tb - BANG.nebula) / BANG.swirl, 0, 1);
+    var p3 = clamp((tb - BANG.proto) / BANG.feed, 0, 1);
+    if (tb >= BANG.burst && p3 < 1) {
+      c.globalAlpha = p3 > 0.6 ? (1 - p3) / 0.4 : 1;
+      var e2 = easeInOut(p2), e3 = ease(p3) * ease(p3);
       for (var i = 0; i < SPECKS.length; i++) {
         var sp = SPECKS[i];
-        var rad = sp.s * reach * ease(p1) * (1 - p2 * p2 * p2);
-        var ang = sp.a + sp.spin * Math.PI * p2 * p2;
-        var x = cx + Math.cos(ang) * rad, y = slotMid(cy + Math.sin(ang) * rad * 0.8);
-        // Long streaks at the burst, short grains in the cloud, longer as they fall in
-        var len = thick * (p2 > 0 ? 0.8 + 2 * p2 : 4 * (1 - p1) + 0.8);
+        // Out to the edge of the cloud, then drawn in to a disc, then fed in
+        var rad = sp.s * reach * ease(p1) * (1 - 0.6 * e2) * (1 - e3);
+        // One direction of spin; inner orbits run faster (Kepler)
+        var turns = (1.2 + 1.4 * (1 - sp.s)) * e2 + 1.5 * e3;
+        var ang = sp.a + turns * Math.PI * 2;
+        // The cloud flattens into a disc as it spins
+        var flat = 0.85 - 0.6 * e2;
+        var x = cx + Math.cos(ang) * rad, y = slotMid(cy + Math.sin(ang) * rad * flat);
+        // Long streaks at the burst; in the disc, streaks along the orbit
+        var len = thick * (p2 > 0 ? 0.8 + 2.4 * e2 * (1 - sp.s * 0.5) : 4.5 * (1 - p1) + 0.8);
         bar(c, x - len / 2, x + len / 2, y, thick * 0.55);
       }
       c.globalAlpha = 1;
     }
 
-    // Ignition: a striped shock ring
-    var p4 = clamp((tb - BANG.ignite) / BANG.shock, 0, 1);
-    if (p4 > 0 && p4 < 1) {
-      var ro = sun.r * (1 + 2.6 * ease(p4)), ri = ro - sun.r * 0.35 * (1 - p4);
-      c.globalAlpha = 1 - p4;
-      for (var k = 0; k < rows.length; k++) {
-        var my = rows[k].top + thick / 2, dy = my - cy;
-        if (Math.abs(dy) >= ro) continue;
-        var ho = Math.sqrt(ro * ro - dy * dy), hi = Math.abs(dy) < ri ? Math.sqrt(ri * ri - dy * dy) : 0;
-        bar(c, cx - ho, cx - hi, my, thick * 0.6);
-        bar(c, cx + hi, cx + ho, my, thick * 0.6);
-      }
+    // Ignition: three shock rings, each a little behind the last, running
+    // past the edges of the screen
+    var far = Math.hypot(w, h);
+    for (var q = 0; q < 3; q++) {
+      var p4 = clamp((tb - BANG.ignite - q * 140) / BANG.shock, 0, 1);
+      if (p4 <= 0 || p4 >= 1) continue;
+      var ro = sun.r + (far - sun.r) * ease(p4);
+      var band = sun.r * (0.45 - q * 0.12) * (1 - p4 * 0.6);
+      c.globalAlpha = 1 - p4 * p4;
+      ring(c, cx, cy, Math.max(0, ro - band), ro, thick * (0.9 - q * 0.2));
       c.globalAlpha = 1;
     }
+  }
+
+  // The protostar's radius over time: three heartbeat pulses as it feeds,
+  // a collapse just before ignition, then a snap to full size
+  function protoRadius(tb) {
+    var r = sun.r;
+    if (tb < BANG.proto) return 0;
+    if (tb < BANG.ignite - BANG.collapse) {
+      var g = clamp((tb - BANG.proto) / (BANG.ignite - BANG.collapse - BANG.proto), 0, 1);
+      var beat = Math.pow(Math.max(0, Math.sin(g * Math.PI * 3)), 6); // three throbs
+      return r * (0.12 + 0.55 * ease(g)) * (1 + 0.35 * beat);
+    }
+    if (tb < BANG.ignite) {
+      var cp = (tb - (BANG.ignite - BANG.collapse)) / BANG.collapse;
+      return r * 0.67 * (1 - 0.7 * cp * cp); // falls in on itself
+    }
+    var sp = clamp((tb - BANG.ignite) / 600, 0, 1);
+    return r * (1 + 0.3 * Math.sin(sp * Math.PI) * (1 - sp)); // snaps out, overshoots, settles
   }
 
   // Daytime: the scene straight onto the page
@@ -373,10 +410,19 @@
     ctx.fillStyle = NIGHT;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     drawScene(lctx, NIGHT_INK, NIGHT_RULE, reveal);
-    if (tb < BANG.ignite + BANG.shock) drawBirth(lctx, NIGHT_INK, tb);
+    if (tb < BANG.ignite + BANG.shock + 300) drawBirth(lctx, NIGHT_INK, tb);
     ctx.globalAlpha = fade;
     ctx.drawImage(layer, 0, 0);
     ctx.globalAlpha = 1;
+
+    // Ignition flash: the screen goes white and drains back to night
+    var fp = (tb - BANG.ignite) / BANG.flash;
+    if (fp >= 0 && fp < 1) {
+      ctx.globalAlpha = 0.95 * (fp < 0.08 ? fp / 0.08 : Math.pow(1 - (fp - 0.08) / 0.92, 2));
+      ctx.fillStyle = PAPER;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.globalAlpha = 1;
+    }
     if (dawnR <= 0) return;
     ctx.save();
     ctx.beginPath();
@@ -439,16 +485,20 @@
   var Q = repeat ? 0.35 : 1;
   var FADE_MS = 1000 * Q; // the void fades up
   var BANG_AT = 500 * Q; // the point appears
+  // Times are ms from the bang
   var BANG = {
-    burst: 250 * Q, // the point flares
-    out: 1000 * Q, // specks fly outward
-    back: 1500 * Q, // and swirl back in
-    proto: 2200 * Q, // the protostar starts to condense (from the bang)
-    grow: 1000 * Q, // and takes this long to reach full size
-    ignite: 3300 * Q, // ignition: shock ring, the sheet wipes in
-    shock: 900 * Q
+    burst: 350 * Q, // the point flares
+    out: 900 * Q, // fragments fly outward
+    nebula: 1100 * Q, // the cloud starts to spin into a disc...
+    swirl: 2200 * Q, // ...for this long
+    proto: 2900 * Q, // a core forms and the disc feeds into it...
+    feed: 1700 * Q, // ...for this long
+    collapse: 300 * Q, // the core falls in on itself before...
+    ignite: 4800 * Q, // ...ignition: flash, shock rings, shake
+    flash: 650 * Q,
+    shock: 1300 * Q
   };
-  var REVEAL_AT = BANG_AT + BANG.ignite;
+  var REVEAL_AT = BANG_AT + BANG.ignite + 150 * Q;
   var RISE_AT = REVEAL_AT + 200 * Q, RISE_MS = repeat ? 2500 : 8000; // the sunrise
   var DAWN_FROM = 0.2; // share of the rise before daylight starts to spread
 
@@ -471,7 +521,7 @@
 
     window.addEventListener("resize", layout);
 
-    var t0 = performance.now(), prev = t0, isDay = false;
+    var t0 = performance.now(), prev = t0, isDay = false, shaking = false;
 
     function frame(now) {
       var t = now - t0;
@@ -498,9 +548,17 @@
 
       // The sun climbs from behind the line; daylight spreads from it
       var tb = t - BANG_AT;
-      var grow = clamp((tb - BANG.proto) / BANG.grow, 0, 1);
-      // The protostar flickers as it condenses, then holds steady
-      sun.cur = sun.r * ease(grow) * (1 + 0.06 * Math.sin(tb / 60) * (1 - grow));
+      sun.cur = protoRadius(tb);
+      // The screen shakes for a moment at ignition
+      var sk = (tb - BANG.ignite) / (500 * Q);
+      if (sk >= 0 && sk < 1) {
+        var amp = 10 * (1 - sk) * (1 - sk);
+        canvas.style.transform = "translate(" + ((Math.random() - 0.5) * amp).toFixed(1) + "px," + ((Math.random() - 0.5) * amp).toFixed(1) + "px)";
+        shaking = true;
+      } else if (shaking) {
+        canvas.style.transform = "";
+        shaking = false;
+      }
       var rise = clamp((t - RISE_AT) / RISE_MS, 0, 1);
       sun.y = sun.startY + (sun.homeY - sun.startY) * easeInOut(rise);
       var dawn = easeInOut(clamp((rise - DAWN_FROM) / (1 - DAWN_FROM), 0, 1));
