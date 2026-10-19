@@ -107,7 +107,7 @@ a { color: inherit; text-decoration: none; }
 .js .counter {
   position: fixed;
   left: 50%;
-  top: 50%;
+  top: calc(50% + var(--counter-dy, 0px)); /* under the spinning cube */
   z-index: 3;
   transform: translate(-50%, -50%);
   display: block;

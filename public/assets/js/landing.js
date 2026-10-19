@@ -1,13 +1,17 @@
 /* ==========================================================================
    dayne.online — temporary landing page motion (brutalist / striped type)
-   1. Counter: 000 -> 100 in the middle of the page
-   2. Reveal: one giant line of heavy type ("dayne.online — coming soon —")
-      cut into horizontal bars, like the IBM 8-bar logo. The bars wipe in
-      one at a time, alternating from the left and the right.
+   1. Loader: the logo spins in the middle of the page over a 000 -> 100
+      counter
+   2. Reveal: one giant line of heavy type ("dayne.online [logo] coming
+      soon [logo]") cut into horizontal bars, like the IBM 8-bar logo. The
+      bars wipe in one at a time, alternating from the left and the right.
    3. Live: the line loops forever, drifting left. Scrolling (wheel, drag,
       arrow keys) pushes it sideways with momentum. Each bar has its own
       lag, so at speed the letters shear apart along the bars, then close
       up again as the line slows.
+   The logo is a cube drawn in the same bars: each face's bars are as thick
+   as that face is lit (engraving-style shading), so it reads as 3D. It
+   spins slowly, and faster as you scroll.
    The type is rendered once into an offscreen strip; each frame draws that
    strip bar by bar, so every bar edge lands on a whole device pixel.
    No dependencies. Reduced motion: no counter, a still line, no loop.
@@ -33,7 +37,7 @@
   var TRACKING = -0.03; // em
 
   var NAME = "dayne.online";
-  var TEXT = NAME + " — coming soon — ";
+  var SOON = "coming soon";
   var BAR = 0.62; // bar thickness as a share of the bar pitch (rest is gap)
 
   /* ------------------------------------------------------------------
@@ -47,6 +51,67 @@
   var stripTop = 0; // css px from the top of the screen
   var offset = 0; // css px; the line's whole motion lives here
   var lags = [], weights = [];
+  var pitch = 10, thick = 6; // css px: bar spacing and thickness
+  var logoXs = [], slotW = 0; // logo centres within one period; its slot
+  var cubeS = 10, cubeY = 0; // the cube in the line: half-edge, centre y
+  var spin = 0.6; // the cube's rotation, radians
+
+  /* ------------------------------------------------------------------
+     The logo: a cube in bars
+  ------------------------------------------------------------------ */
+  var VERTS = [];
+  for (var v = 0; v < 8; v++) VERTS.push([v & 1 ? 1 : -1, v & 2 ? 1 : -1, v & 4 ? 1 : -1]);
+  var FACES = [
+    { q: [1, 3, 7, 5], n: [1, 0, 0] }, { q: [0, 4, 6, 2], n: [-1, 0, 0] },
+    { q: [2, 6, 7, 3], n: [0, 1, 0] }, { q: [0, 1, 5, 4], n: [0, -1, 0] },
+    { q: [4, 5, 7, 6], n: [0, 0, 1] }, { q: [0, 2, 3, 1], n: [0, 0, -1] }
+  ];
+  var TILT = 0.6; // tipped toward the viewer so the top face shows
+  var LIGHT = (function (l) { var m = Math.hypot(l[0], l[1], l[2]); return [l[0] / m, l[1] / m, l[2] / m]; })([-0.45, 0.8, 0.5]);
+
+  // Spin about the vertical axis, then tilt; viewer looks down -z
+  function turn(p, a) {
+    var x = p[0] * Math.cos(a) + p[2] * Math.sin(a);
+    var z = -p[0] * Math.sin(a) + p[2] * Math.cos(a);
+    return [x, p[1] * Math.cos(TILT) - z * Math.sin(TILT), p[1] * Math.sin(TILT) + z * Math.cos(TILT)];
+  }
+
+  // The visible faces at angle a, projected flat (orthographic, unit size)
+  // with how thick their bars are (0.22 in shadow .. 1 fully lit)
+  function cubeFaces(a) {
+    var pts = VERTS.map(function (p) { return turn(p, a); });
+    var out = [];
+    for (var i = 0; i < FACES.length; i++) {
+      var n = turn(FACES[i].n, a);
+      if (n[2] <= 0.001) continue;
+      var lit = Math.max(0, n[0] * LIGHT[0] + n[1] * LIGHT[1] + n[2] * LIGHT[2]);
+      out.push({ pts: FACES[i].q.map(function (k) { return [pts[k][0], -pts[k][1]]; }), weight: 0.14 + 0.86 * lit });
+    }
+    return out;
+  }
+
+  // Draw the cube's slice on one bar row: for each visible face, the span
+  // where the row crosses it, as a bar as thick as the face is lit
+  function cubeRow(c, faces, cx, cy, S, mid) {
+    var u = (mid - cy) / S; // the row's height in cube units
+    var gapD = Math.max(1, Math.round(dpr * Math.max(1, S * 0.03)));
+    for (var i = 0; i < faces.length; i++) {
+      var q = faces[i].pts, lo = Infinity, hi = -Infinity;
+      for (var e = 0; e < 4; e++) {
+        var a = q[e], b = q[(e + 1) % 4];
+        if ((u - a[1]) * (u - b[1]) > 0 || a[1] === b[1]) continue;
+        var x = a[0] + (b[0] - a[0]) * (u - a[1]) / (b[1] - a[1]);
+        lo = Math.min(lo, x);
+        hi = Math.max(hi, x);
+      }
+      if (hi <= lo) continue;
+      var t = Math.max(1, Math.round(thick * faces[i].weight * dpr));
+      // A hairline gap either side, so the edges between faces show
+      var x1 = Math.round((cx + lo * S) * dpr) + gapD, x2 = Math.round((cx + hi * S) * dpr) - gapD;
+      if (x2 <= x1) continue;
+      c.fillRect(x1, Math.round(mid * dpr - t / 2), x2 - x1, t);
+    }
+  }
 
   function setFont(c, px) {
     c.font = WEIGHT + " " + px + "px " + FAMILY;
@@ -68,7 +133,7 @@
     offset *= fontPx / prevFont;
 
     setFont(sctx, fontPx);
-    period = sctx.measureText(TEXT).width;
+    var wName = sctx.measureText(NAME).width, wSoon = sctx.measureText(SOON).width;
     var ascent = sctx.measureText("dl").actualBoundingBoxAscent;
     var descent = sctx.measureText("y").actualBoundingBoxDescent;
     var xh = sctx.measureText("x").actualBoundingBoxAscent;
@@ -79,8 +144,8 @@
     // Bars are anchored so the baseline and the x-height both land on bar
     // edges; ascenders and descenders carry on at the same pitch.
     var nx = Math.max(3, Math.min(7, Math.floor(xh / 4.5)));
-    var pitch = xh / (nx - 1 + BAR);
-    var thick = pitch * BAR;
+    pitch = xh / (nx - 1 + BAR);
+    thick = pitch * BAR;
     bars = [];
     var jMin = -Math.ceil(descent / pitch), jMax = nx - 1 + Math.ceil((ascent - xh) / pitch);
     for (var j = jMax; j >= jMin; j--) {
@@ -88,7 +153,7 @@
       var bottom = top + thick;
       top = Math.max(0, top);
       bottom = Math.min(stripH, bottom);
-      if (bottom - top > 0.5) bars.push({ top: top, height: bottom - top, j: j });
+      if (bottom - top > 0.5) bars.push({ top: top, height: bottom - top, j: j, mid: baseline - j * pitch - thick / 2 });
     }
 
     // Each bar's share of the shear: top bars lead, bottom bars trail, and
@@ -99,6 +164,13 @@
       return (0.5 - u) * 2 + (i % 2 ? 0.3 : -0.3);
     });
 
+    // One period of the line: name, logo, "coming soon", logo. The cube is
+    // as tall as the ascenders, sitting on the baseline.
+    cubeS = ascent / 3.1;
+    slotW = ascent * 1.5;
+    period = wName + slotW + wSoon + slotW;
+    logoXs = [wName + slotW / 2, wName + slotW + wSoon + slotW / 2];
+
     // Render one period of the line, plus a little extra so copies overlap
     scale = Math.min(dpr, 16000 / (period + fontPx));
     strip.width = Math.ceil((period + fontPx) * scale);
@@ -107,12 +179,19 @@
     setFont(sctx, fontPx);
     sctx.fillStyle = INK;
     sctx.textBaseline = "alphabetic";
-    sctx.fillText(TEXT, 0, baseline);
-    sctx.fillText(TEXT, period, baseline);
+    for (var p0 = 0; p0 <= period; p0 += period) {
+      sctx.fillText(NAME, p0, baseline);
+      sctx.fillText(SOON, p0 + wName + slotW, baseline);
+    }
     trimSlivers();
 
     // Centre the x-height band on the screen
     stripTop = Math.round(h / 2 - (baseline - xh / 2));
+    cubeY = stripTop + baseline - ascent / 2;
+
+    // The loader's cube, bigger, with the counter under it
+    loaderS = Math.max(18, Math.min(w, h) * 0.075);
+    docEl.style.setProperty("--counter-dy", Math.round(loaderS * 2.2) + "px");
   }
 
   // Trim slivers: where a letter edge falls just inside a bar (the top of a
@@ -137,6 +216,20 @@
     sctx.putImageData(img, 0, 0);
   }
 
+  var loaderS = 20;
+
+  // The loader: the cube alone in the middle, on its own bar raster
+  function drawLoader() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = INK;
+    var faces = cubeFaces(spin), cy = h / 2, reach = loaderS * 1.8;
+    var lp = Math.max(3.5, loaderS / 7), saved = thick;
+    thick = lp * BAR;
+    for (var y = cy - Math.ceil(reach / lp) * lp; y <= cy + reach; y += lp) cubeRow(ctx, faces, w / 2, cy, loaderS, y);
+    thick = saved;
+  }
+
   // Open with "dayne.online" centred
   function startOffset() {
     setFont(sctx, fontPx);
@@ -154,6 +247,8 @@
     var W = canvas.width;
     var periodD = period * dpr;
     var f = dpr / scale; // strip px -> device px
+    var faces = cubeFaces(spin);
+    ctx.fillStyle = INK;
 
     for (var i = 0; i < bars.length; i++) {
       var b = bars[i];
@@ -178,6 +273,11 @@
       var base = ((x % periodD) + periodD) % periodD - periodD;
       for (var x0 = base; x0 < W; x0 += periodD) {
         ctx.drawImage(strip, 0, sy, strip.width, sh, Math.round(x0), dy, strip.width * f, dh);
+        // The logos riding in this copy of the line
+        for (var g = 0; g < logoXs.length; g++) {
+          var cx = x0 / dpr + logoXs[g];
+          if (cx > -cubeS * 2 && cx < w + cubeS * 2) cubeRow(ctx, faces, cx, cubeY, cubeS, stripTop + b.mid);
+        }
       }
       ctx.restore();
     }
@@ -261,6 +361,8 @@
         var p = ease(Math.min(1, t / COUNT_MS));
         if (!loaded) p = Math.min(p, 0.92);
         if (pctEl) pctEl.textContent = ("00" + Math.round(p * 100)).slice(-3);
+        spin += 0.03 * k;
+        drawLoader();
         if (p >= 1) {
           revealAt = t + 120;
           docEl.classList.add("live");
@@ -277,6 +379,8 @@
       vel *= Math.pow(0.95, k);
       if (Math.abs(vel) < 0.01) vel = 0;
       offset += (DRIFT + vel) * k;
+      // The cube turns slowly, and faster (either way) as the line is pushed
+      spin += (0.012 - vel * 0.004) * k;
 
       // Each bar chases its share of the speed, so they shear and re-close
       var limit = w * 0.3;
