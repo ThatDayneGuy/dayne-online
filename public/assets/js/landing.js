@@ -15,8 +15,7 @@
    carries a round lens. It spins slowly, and faster as you scroll. At the
    end of loading it turns to face you and the shutter clicks: the lens
    closes, the page flashes black, and the line appears.
-   A click or tap (not a drag) takes a photo: focus brackets snap in
-   around the spot, then the framed area softly turns negative and back.
+   A click or tap (not a drag) snaps focus brackets in around the spot.
    Behind it all, faint scanlines run across the page on the same raster
    as the bars (through every bar and every gap), with a slightly darker
    band rolling slowly down the screen like an old monitor's refresh.
@@ -354,30 +353,20 @@
   }
 
   /* ------------------------------------------------------------------
-     Taking a photo: focus brackets, then the frame turns negative
+     A click: focus brackets
   ------------------------------------------------------------------ */
   var shots = []; // {x, y, at}
-  var FOCUS = { snap: 180, flash: 200, flashFor: 160, fadeFrom: 520, gone: 1000 }; // ms after the click
-  var negative = document.querySelector("[data-negative]");
+  var FOCUS = { snap: 180, fadeFrom: 520, gone: 1000 }; // ms after the click
 
   function focusBox() { return Math.max(28, Math.min(w, h) * 0.08); } // half the bracket box
 
   function shoot(x, y) {
     if (reduceMotion || !live) return;
     shots.push({ x: x, y: y, at: clock });
-    if (negative) {
-      // The negative covers just the framed area
-      var B = focusBox();
-      negative.style.left = (x - B) + "px";
-      negative.style.top = (y - B) + "px";
-      negative.style.width = negative.style.height = (B * 2) + "px";
-      setTimeout(function () { negative.classList.add("on"); }, FOCUS.flash);
-      setTimeout(function () { negative.classList.remove("on"); }, FOCUS.flash + FOCUS.flashFor);
-    }
   }
 
   // Four corner brackets around each shot: they snap in from wide, with a
-  // touch of overshoot, hold through the flash, then fade
+  // touch of overshoot, hold, then fade
   function drawFocus() {
     if (!shots.length) return;
     var B = focusBox();

@@ -123,30 +123,6 @@ a { color: inherit; text-decoration: none; }
 
 .js.live .counter { visibility: hidden; }
 
-/* ---------- Negative flash ---------- */
-
-/* White with difference blending inverts whatever is under it. On a
-   click, landing.js sizes this to the focus brackets, so just the framed
-   area turns negative: a quick fade in, a slower fade out. */
-.negative {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 0;
-  height: 0;
-  z-index: 10;
-  pointer-events: none;
-  background: #fff;
-  mix-blend-mode: difference;
-  opacity: 0;
-  transition: opacity 0.35s ease-out;
-}
-
-.negative.on {
-  opacity: 1;
-  transition: opacity 0.09s ease-in;
-}
-
 /* ---------- Links ---------- */
 
 .links {
