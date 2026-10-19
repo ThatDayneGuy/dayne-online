@@ -1,0 +1,81 @@
+---
+// Temporary landing page ("in the darkroom"). Standalone on purpose: it
+// does not use Base.astro, so it carries none of the site's header, menu,
+// transitions or GSAP stack. Styling lives in /assets/css/landing.css and
+// motion in /assets/js/landing.js. To make it live, render this page as
+// the home page (or redirect / to /soon.html) — see README.
+const FAVICON =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230c0c0c'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Helvetica' font-size='17' font-weight='700' fill='%23f3f2ef'%3ED%3C/text%3E%3C/svg%3E";
+
+const NAME = "Dayne";
+
+// Film-rebate markings for the strip along the bottom: 24 frames + "A" halves
+const rebate = Array.from({ length: 24 }, (_, i) => {
+  const n = String(i + 1).padStart(2, "0");
+  return `${n}  ▸  ${n}A`;
+}).join("    ");
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Dayne</title>
+    <meta name="description" content="Photographs and writing by Dayne. The full site is still in the darkroom." />
+    <meta name="robots" content="noindex" />
+    <meta property="og:title" content="Dayne" />
+    <meta property="og:description" content="Photographs and writing by Dayne. The full site is still in the darkroom." />
+    <link rel="icon" href={FAVICON} />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0a0a0a" />
+
+    <script is:inline>
+    (function () {
+        var d = document.documentElement;
+        d.classList.add("js");
+        // Safety net: if landing.js never runs, still show everything.
+        setTimeout(function () { d.classList.add("go"); }, 2500);
+    })();
+    </script>
+
+    <link rel="preload" href="/assets/fonts/archivo-normal-100-900.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/assets/fonts/fragment-mono-normal-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/assets/css/fonts.css" />
+    <link rel="stylesheet" href="/assets/css/landing.css" />
+</head>
+<body>
+    <canvas class="sheet" aria-hidden="true" data-sheet></canvas>
+
+    <div class="stage">
+        <header class="top">
+            <span class="label" data-in style="--d: 0">dayne.online</span>
+            <span class="label timer" data-in style="--d: 1" aria-hidden="true">Dev <span data-timer>00:00</span></span>
+            <nav class="links" aria-label="Elsewhere" data-in style="--d: 2">
+                <!-- TODO: real Instagram URL and email address -->
+                <a class="label" href="#">Instagram</a>
+                <a class="label" href="#">Email</a>
+            </nav>
+        </header>
+
+        <main class="hero" id="main">
+            <h1 class="name" aria-label={NAME} data-name>
+                {NAME.split("").map((ch, i) => (
+                    <span class="ch" style={`--i: ${i}`} aria-hidden="true">{ch}</span>
+                ))}
+            </h1>
+            <div class="sub">
+                <p class="tagline" data-in style="--d: 3">Photographs <span class="amp">&amp;</span> writing</p>
+                <p class="label status" data-in style="--d: 4"><span class="dot" aria-hidden="true"></span>Still in the darkroom &mdash; new site soon</p>
+            </div>
+        </main>
+
+        <div class="rebate" aria-hidden="true" data-in style="--d: 5">
+            <div class="rebate-track">
+                <span>{rebate}</span><span>{rebate}</span>
+            </div>
+        </div>
+    </div>
+
+    <script is:inline defer src="/assets/js/landing.js"></script>
+</body>
+</html>
