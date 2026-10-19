@@ -1,14 +1,21 @@
 /* ==========================================================================
    dayne.online — temporary landing page motion (green-phosphor terminal)
    One canvas:
-   1. Boot: the pixel "D" logo flickers on while a one-line boot status
-      counts to 100%
+   1. Boot: the pixel "D" logo flickers on while a percentage counts up
    2. Burst: the logo's pixels fly out and settle into one giant line of
       pixel text ("dayne.online — coming soon —", endlessly repeated)
    3. Live: the line loops forever, drifting left. Scrolling (wheel, drag,
       arrow keys) pushes it sideways with momentum; the faster it moves the
       longer its phosphor trail and the more pixel dust it sheds below.
       Every few seconds it glitches (sliced rows, ghosting, a hold slip).
+
+   Pixels are drawn the way a monochrome CRT drew them, not as squares:
+   - each pixel row is 2-3 sweeps of the electron beam (scanlines) with
+     dark gaps between them, on one fixed raster
+   - lit pixels side by side merge into one continuous beam run, with
+     soft round ends where the beam switches on and off
+   - the beam has a hot core and a soft skirt that bleeds into the gaps
+   - horizontal position is analog (smooth); vertical snaps to scanlines
    No dependencies. Reduced motion: no loader, a still line, no loop.
    ========================================================================== */
 
@@ -20,12 +27,13 @@
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   var canvas = document.querySelector("[data-screen]");
-  if (!canvas || !canvas.getContext) { docEl.classList.remove("js"); return; }
+  if (!canvas || !canvas.getContext || !window.Path2D) { docEl.classList.remove("js"); return; }
   var ctx = canvas.getContext("2d");
 
   var css = getComputedStyle(docEl);
   function token(name, fallback) { return (css.getPropertyValue(name) || fallback).trim(); }
   var PHOSPHOR = token("--phosphor", "#3cf06e");
+  var HOT = token("--hot", "#b4ffc8");
   var DIM = token("--dim", "#1d7a3d");
 
   /* ------------------------------------------------------------------
@@ -92,13 +100,76 @@
     return { cells: cells, period: col };
   }
 
+  // Merge lit cells that touch along a row into beam runs {c, r, len}
+  function runsFrom(cells) {
+    var sorted = cells.slice().sort(function (a, b) { return a.r - b.r || a.c - b.c; });
+    var runs = [], cur = null;
+    for (var i = 0; i < sorted.length; i++) {
+      var s = sorted[i];
+      if (cur && cur.r === s.r && cur.c + cur.len === s.c) cur.len++;
+      else if (!(cur && cur.r === s.r && s.c < cur.c + cur.len)) runs.push(cur = { c: s.c, r: s.r, len: 1 });
+    }
+    return runs;
+  }
+
   var ROW = lineCells(LINE);
+  var ROW_RUNS = runsFrom(ROW.cells);
   var NAME_COLS = lineCells(NAME).period - 1;
 
   var LOGO_CELLS = [];
   LOGO.forEach(function (row, r) {
     for (var x = 0; x < row.length; x++) if (row[x] === "#") LOGO_CELLS.push({ c: x, r: r });
   });
+
+  /* ------------------------------------------------------------------
+     The raster: how many scanlines make up one pixel row at a cell size,
+     and how wide the beam is
+  ------------------------------------------------------------------ */
+  function scanlines(cell) { return cell >= 9 ? 3 : 2; }
+  function pitch(cell) { return cell / scanlines(cell); }
+  function beamWidth(cell) { return Math.max(1, pitch(cell) * 0.6); }
+
+  // Add one beam run (a row of lit pixels) to a path: K scanline sweeps,
+  // each pulled in at the ends so the round caps stay inside the cells
+  function addRun(path, x, y, len, cell) {
+    var k = scanlines(cell), p = cell / k, inset = Math.min(beamWidth(cell) / 2, len * 0.3);
+    for (var s = 0; s < k; s++) {
+      var yy = y + p * (s + 0.5);
+      path.moveTo(x + inset, yy);
+      path.lineTo(x + len - inset, yy);
+    }
+  }
+
+  // Stroke a path of beam runs: a soft skirt, the beam, then its hot core.
+  // `dx` offsets the whole thing (used for ghosting).
+  function strokeBeam(path, cell, color, dx, core) {
+    var bw = beamWidth(cell);
+    ctx.save();
+    if (dx) ctx.translate(dx, 0);
+    ctx.lineCap = "round";
+    ctx.strokeStyle = color;
+    ctx.globalAlpha = 0.2;
+    ctx.lineWidth = bw * 2.4;
+    ctx.stroke(path);
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = bw;
+    ctx.stroke(path);
+    if (core) {
+      ctx.globalAlpha = 0.55;
+      ctx.strokeStyle = HOT;
+      ctx.lineWidth = Math.max(0.6, bw * 0.35);
+      ctx.stroke(path);
+    }
+    ctx.restore();
+  }
+
+  function drawBeams(path, cell, ghost) {
+    if (ghost > 0.4) {
+      strokeBeam(path, cell, DIM, -ghost, false);
+      strokeBeam(path, cell, DIM, ghost * 0.6, false);
+    }
+    strokeBeam(path, cell, PHOSPHOR, 0, true);
+  }
 
   /* ------------------------------------------------------------------
      Layout
@@ -127,12 +198,14 @@
     lx = Math.round(w / 2 - 6 * ls);
     ly = Math.round(h * 0.42 - 6 * ls);
     docEl.style.setProperty("--logo-bottom", (ly + 12 * ls + 24) + "px");
-    docEl.style.setProperty("--logo-w", (12 * ls) + "px");
   }
 
-  /* ------------------------------------------------------------------
-     Drawing primitives
-  ------------------------------------------------------------------ */
+  // Snap a y position onto the line's raster (scanlines are fixed rows)
+  function snapY(y) {
+    var p = pitch(cs);
+    return oy + Math.round((y - oy) / p) * p;
+  }
+
   // Phosphor persistence: fade the last frame instead of wiping it.
   // `keep` 0..1 is how much of it survives (more at speed = longer trails).
   function clear(keep) {
@@ -148,28 +221,16 @@
     ctx.globalCompositeOperation = "source-over";
   }
 
-  function drawPixel(x, y, size, ghost) {
-    if (ghost > 0.4) {
-      ctx.fillStyle = DIM;
-      ctx.fillRect(x - ghost, y, size, size);
-      ctx.fillRect(x + ghost * 0.6, y, size, size);
-    }
-    ctx.fillStyle = PHOSPHOR;
-    ctx.fillRect(x, y, size, size);
-  }
-
   /* ------------------------------------------------------------------
      Scroll input -> sideways momentum
   ------------------------------------------------------------------ */
   var DRIFT = -0.55; // px per frame at rest, right to left
   var vel = 0; // extra px per frame from the visitor
-  var scrolled = false;
   var phase = "boot";
 
   function push(dx) {
     if (phase !== "live") return;
     vel = Math.max(-90, Math.min(90, vel + dx));
-    if (!scrolled) { scrolled = true; docEl.classList.add("scrolled"); }
   }
 
   window.addEventListener("wheel", function (e) {
@@ -200,71 +261,67 @@
     else if (k === "ArrowLeft" || k === "ArrowUp" || k === "PageUp") push(14);
   });
 
-  /* ------------------------------------------------------------------
-     DOM: boot status, clock
-  ------------------------------------------------------------------ */
-  var logLines = document.querySelectorAll(".loader-log li");
   var pctEl = document.querySelector("[data-pct]");
   function setProgress(p) {
-    var current = 0;
-    for (var j = 0; j < logLines.length; j++) {
-      if (p >= parseFloat(logLines[j].getAttribute("data-at"))) current = j;
-    }
-    for (var k = 0; k < logLines.length; k++) logLines[k].classList.toggle("current", k === current);
     if (pctEl) pctEl.textContent = ("00" + Math.round(p * 100)).slice(-3) + "%";
   }
-
-  var clockEl = document.querySelector("[data-clock]");
-  function pad(n) { return n < 10 ? "0" + n : String(n); }
-  function tick() {
-    var d = new Date();
-    if (clockEl) clockEl.textContent = pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
-  }
-  tick();
-  setInterval(tick, 1000);
 
   /* ------------------------------------------------------------------
      The line
   ------------------------------------------------------------------ */
   var glitch = { until: 0, next: 0, ghost: 0, a: 0, b: 0, shift: 0 };
 
-  // Open with "dayne.online" centred; the rest of the loop runs off-screen
+  // Open with "dayne.online" centred
   function startOffset() {
     return Math.round((w - NAME_COLS * cs) / 2);
   }
 
   // Draw every visible copy of the line at the current offset
   function drawLine(t, speed) {
-    var size = cs - Math.max(1, Math.round(cs * 0.14));
     var period = ROW.period * cs;
     var base = ((offset % period) + period) % period - period;
     var glitching = t < glitch.until;
     var ghost = Math.min(speed * 0.5, cs * 1.4) + (glitching ? glitch.ghost : 0);
+    var beams = new Path2D(), dustDim = new Path2D(), dustHot = new Path2D();
 
     // Pixel dust: the faster the line moves, the more it sheds below
     var dust = Math.min(1, Math.max(0, (speed - 2) / 22));
     var dir = DRIFT + vel > 0 ? 1 : -1;
+    var p = pitch(cs), clamped = Math.min(speed, 45);
 
     for (var x0 = base; x0 < w; x0 += period) {
-      for (var i = 0; i < ROW.cells.length; i++) {
-        var cell = ROW.cells[i];
-        var x = x0 + cell.c * cs;
-        if (x < -cs * 2 || x > w + cs) continue;
-        var y = oy + cell.r * cs;
-        if (glitching && cell.r >= glitch.a && cell.r < glitch.b) x += glitch.shift;
-        if (Math.random() < 0.0015) continue; // a tired panel drops a pixel
-        drawPixel(x, y, size, ghost);
+      for (var i = 0; i < ROW_RUNS.length; i++) {
+        var run = ROW_RUNS[i];
+        var x = x0 + run.c * cs, len = run.len * cs;
+        if (x + len < -cs * 2 || x > w + cs) continue;
+        var y = oy + run.r * cs;
+        if (glitching && run.r >= glitch.a && run.r < glitch.b) x += glitch.shift;
+        if (Math.random() < 0.003) continue; // a tired tube drops a run
+        addRun(beams, x, y, len, cs);
 
-        // Up to two specks per pixel, falling and lagging behind the motion
-        for (var n = 0; n < 2; n++) {
-          if (Math.random() >= dust * 0.7) break;
-          var fall = Math.pow(Math.random(), 1.4) * Math.min(speed, 45) * cs * 0.3;
-          var lag = -dir * Math.random() * Math.min(speed, 45) * cs * 0.22;
-          var ds = Math.max(1, Math.round(size * (0.2 + Math.random() * 0.5)));
-          ctx.fillStyle = Math.random() < 0.3 ? PHOSPHOR : DIM;
-          ctx.fillRect(x + lag, y + cs * 0.4 + fall, ds, ds);
+        // Dust: short beam flecks on the raster, falling and lagging behind
+        for (var n = 0; n < run.len * 2; n++) {
+          if (Math.random() >= dust * 0.7) continue;
+          var fx = x + Math.random() * len - dir * Math.random() * clamped * cs * 0.22;
+          var fy = snapY(y + cs * 0.4 + Math.pow(Math.random(), 1.4) * clamped * cs * 0.3) + p / 2;
+          var fl = Math.max(1, cs * (0.2 + Math.random() * 0.6));
+          var target = Math.random() < 0.3 ? dustHot : dustDim;
+          target.moveTo(fx, fy);
+          target.lineTo(fx + fl, fy);
         }
       }
+    }
+
+    drawBeams(beams, cs, ghost);
+    if (dust > 0) {
+      ctx.save();
+      ctx.lineCap = "round";
+      ctx.lineWidth = beamWidth(cs);
+      ctx.strokeStyle = DIM;
+      ctx.stroke(dustDim);
+      ctx.strokeStyle = PHOSPHOR;
+      ctx.stroke(dustHot);
+      ctx.restore();
     }
   }
 
@@ -320,14 +377,19 @@
 
   function drawBoot(t, done) {
     clear(0.5);
-    var size = ls - Math.max(1, Math.round(ls * 0.14));
+    var lit = [];
     for (var i = 0; i < LOGO_CELLS.length; i++) {
       if (t < logoOn[i]) continue;
       // Each pixel stutters for ~150ms as it comes on
       if (t - logoOn[i] < 150 && Math.random() < 0.5) continue;
-      var jitter = done && Math.random() < 0.15 ? (Math.random() - 0.5) * ls * 3 : 0;
-      drawPixel(lx + LOGO_CELLS[i].c * ls + jitter, ly + LOGO_CELLS[i].r * ls, size, done ? ls * 0.4 : 0);
+      lit.push(LOGO_CELLS[i]);
     }
+    var path = new Path2D();
+    runsFrom(lit).forEach(function (run) {
+      var jitter = done && Math.random() < 0.2 ? (Math.random() - 0.5) * ls * 3 : 0;
+      addRun(path, lx + run.c * ls + jitter, ly + run.r * ls, run.len * ls, ls);
+    });
+    drawBeams(path, ls, done ? ls * 0.4 : 0);
   }
 
   function startBurst(t) {
@@ -341,11 +403,11 @@
       for (var i = 0; i < ROW.cells.length; i++) {
         var hx = x0 + ROW.cells[i].c * cs;
         if (hx < -cs * 2 || hx > w + cs) continue;
-        var lc = LOGO_CELLS[parts.length % LOGO_CELLS.length];
+        var li = parts.length % LOGO_CELLS.length, lc = LOGO_CELLS[li];
         var px = lx + lc.c * ls, py = ly + lc.r * ls;
         var ang = Math.atan2(py - cy, px - cx), kick = 6 + Math.random() * 14;
         parts.push({
-          x: px, y: py, hx: hx, hy: oy + ROW.cells[i].r * cs,
+          logo: li, x: px, y: py, hx: hx, hy: oy + ROW.cells[i].r * cs,
           vx: Math.cos(ang) * kick, vy: Math.sin(ang) * kick,
           // Released left to right, like the line being typed out
           release: t + (Math.max(0, hx) / w) * 420 + Math.random() * 120
@@ -358,12 +420,13 @@
 
   function drawBurst(t, k) {
     clear(0.5);
-    var size = cs - Math.max(1, Math.round(cs * 0.14));
-    var settled = true;
+    var settled = true, total = 0, moving = 0;
+    var waiting = {}, path = new Path2D();
     for (var i = 0; i < parts.length; i++) {
       var p = parts[i];
       if (t < p.release) {
-        drawPixel(p.x, p.y, ls - 1, 0);
+        // Still folded into the logo
+        waiting[p.logo] = true;
         settled = false;
         continue;
       }
@@ -375,9 +438,21 @@
       p.x += p.vx * k;
       p.y += p.vy * k;
       var speed = Math.abs(p.vx) + Math.abs(p.vy);
+      total += speed;
+      moving++;
       if (speed > 0.05 || Math.abs(p.hx - p.x) > 0.5 || Math.abs(p.hy - p.y) > 0.5) settled = false;
-      drawPixel(p.x, p.y, size, Math.min(speed * 0.35, cs * 1.4));
+      addRun(path, p.x, snapY(p.y), cs, cs);
     }
+
+    // What's left of the logo, still on its own raster
+    var left = LOGO_CELLS.filter(function (c, i) { return waiting[i]; });
+    if (left.length) {
+      var lpath = new Path2D();
+      runsFrom(left).forEach(function (run) { addRun(lpath, lx + run.c * ls, ly + run.r * ls, run.len * ls, ls); });
+      drawBeams(lpath, ls, 0);
+    }
+    drawBeams(path, cs, moving ? Math.min((total / moving) * 0.35, cs * 1.4) : 0);
+
     if (settled || t - burstAt > 2600) {
       phase = "live";
       parts = [];
