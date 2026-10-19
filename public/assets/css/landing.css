@@ -1,39 +1,26 @@
 /* ==========================================================================
-   dayne.online — temporary landing page (green-phosphor terminal)
-   An old, dusty monochrome CRT. The boot logo and the giant looping line
-   of pixel text are drawn by landing.js on one canvas, raster scanlines
-   included; this file handles the DOM around it (boot percentage, the two
-   links) and the glass: grain, dust, bezel, flicker. State classes on
-   <html>: .js (script expected), .booting (loader up), .live (line is in),
-   .jolt (glitch).
+   dayne.online — temporary landing page (brutalist / striped type)
+   Flat ink on paper, nothing else. The looping line of barred type is
+   drawn by landing.js on one canvas; this file handles the counter, the
+   two links, and the no-JS fallback (the same bars, done with a CSS
+   gradient clipped to the text). State classes on <html>: .js (script
+   expected), .live (counter done, line is in).
    ========================================================================== */
 
-/* Terminal face for the links and the boot percentage */
-@font-face {
-  font-family: "Term";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url(../fonts/vt323-normal-400.woff2) format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
 :root {
-  --bg: #050805;
-  --phosphor: #3cf06e;
-  --hot: #b4ffc8;
-  --dim: #1d7a3d;
-  --line: rgba(60, 240, 110, 0.18);
+  /* Layout: one line of type through the middle, links pinned to the
+     bottom corners, nothing else */
+  --paper: #f2f1ec;
+  --ink: #0d0d0d;
 
-  --term: "Term", "VT323", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --display: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: "Fragment Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
-  --gutter-l: max(16px, env(safe-area-inset-left, 0px), 4vw);
-  --gutter-r: max(16px, env(safe-area-inset-right, 0px), 4vw);
-  --edge-b: max(16px, env(safe-area-inset-bottom, 0px), 4vw);
+  --gutter-l: max(16px, env(safe-area-inset-left, 0px), 2.5vw);
+  --gutter-r: max(16px, env(safe-area-inset-right, 0px), 2.5vw);
+  --edge-b: max(16px, env(safe-area-inset-bottom, 0px), 2.5vw);
 
-  --glow: 0 0 4px rgba(60, 240, 110, 0.55), 0 0 14px rgba(60, 240, 110, 0.25);
-
-  color-scheme: dark;
+  --text-xs: 0.75rem;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -46,83 +33,16 @@ html {
 }
 
 body {
-  font-family: var(--term);
-  color: var(--phosphor);
-  /* the tube is never quite black: a faint green bloom in the middle */
-  background: radial-gradient(ellipse at 50% 45%, #0b160c 0%, var(--bg) 70%);
-  background-color: var(--bg);
+  font-family: var(--mono);
+  color: var(--ink);
+  background: var(--paper);
   overflow: hidden;
-  touch-action: none; /* the page never scrolls; touches drive the pixels */
-  text-shadow: var(--glow);
+  touch-action: none; /* the page never scrolls; touches drive the line */
 }
 
 a { color: inherit; text-decoration: none; }
-::selection { background: var(--phosphor); color: var(--bg); text-shadow: none; }
-:focus-visible { outline: 2px solid var(--phosphor); outline-offset: 4px; }
-
-/* ---------- The glass ---------- */
-
-/* A slow rolling band of brighter phosphor */
-body::after {
-  content: "";
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: -25vh;
-  height: 25vh;
-  z-index: 20;
-  pointer-events: none;
-  background: linear-gradient(to bottom, transparent, rgba(60, 240, 110, 0.05), transparent);
-  animation: roll 9s linear infinite;
-}
-
-@keyframes roll {
-  to { transform: translateY(135vh); }
-}
-
-/* Bezel, vignette, grain and dust */
-.crt {
-  position: fixed;
-  inset: 0;
-  z-index: 21;
-  pointer-events: none;
-  border-radius: clamp(14px, 3.5vmin, 36px);
-  box-shadow:
-    inset 0 0 14vmin rgba(0, 0, 0, 0.85),
-    inset 0 0 3px rgba(60, 240, 110, 0.15),
-    0 0 0 100vmax #020302;
-}
-
-/* Live grain */
-.crt::before {
-  content: "";
-  position: absolute;
-  inset: -50%;
-  opacity: 0.09;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  animation: grain 0.8s steps(5) infinite;
-}
-
-/* Dust on the glass: sparse specks that never move */
-.crt::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  opacity: 0.35;
-  mix-blend-mode: screen;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 600 600' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='d'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2' seed='11'/%3E%3CfeColorMatrix values='0 0 0 0 0.75  0 0 0 0 0.85  0 0 0 0 0.75  14 0 0 0 -10.4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23d)'/%3E%3C/svg%3E");
-  background-size: 600px 600px;
-}
-
-@keyframes grain {
-  0% { transform: translate(0, 0); }
-  20% { transform: translate(-3%, 2%); }
-  40% { transform: translate(2%, -4%); }
-  60% { transform: translate(-4%, -1%); }
-  80% { transform: translate(3%, 3%); }
-  100% { transform: translate(0, 0); }
-}
+::selection { background: var(--ink); color: var(--paper); }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
 
 /* ---------- Canvas ---------- */
 
@@ -132,22 +52,7 @@ body::after {
   width: 100%;
   height: 100%;
   z-index: 1;
-  filter: drop-shadow(0 0 6px rgba(60, 240, 110, 0.6)) drop-shadow(0 0 22px rgba(60, 240, 110, 0.22));
-  animation: flicker 6s steps(1) infinite;
 }
-
-/* Mostly steady, with the odd brown-out */
-@keyframes flicker {
-  0%, 100% { opacity: 1; }
-  41% { opacity: 0.86; }
-  42% { opacity: 1; }
-  77% { opacity: 0.93; }
-  78% { opacity: 0.8; }
-  79% { opacity: 1; }
-}
-
-/* Vertical hold slips during a glitch */
-.jolt .screen { transform: translateY(-0.6vh) skewX(-1.2deg); }
 
 /* ---------- The line ---------- */
 
@@ -158,27 +63,33 @@ body::after {
   display: grid;
   place-content: center;
   justify-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
   padding-left: var(--gutter-l);
   padding-right: var(--gutter-r);
   text-align: center;
 }
 
-/* No-JS view: plain terminal text */
+/* No-JS view: the same barred type, via a gradient clipped to the text */
 .title {
-  font-weight: 400;
-  font-size: clamp(3rem, 12vw, 10rem);
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: clamp(3.5rem, 15vw, 14rem);
   line-height: 1;
-  overflow-wrap: anywhere;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  background: repeating-linear-gradient(to bottom, var(--ink) 0 0.062em, transparent 0.062em 0.1em);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .line {
-  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
-  letter-spacing: 0.12em;
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-/* With JS the canvas draws both; they stay in the DOM for screen readers */
+/* With JS the canvas draws the line; the text stays for screen readers */
 .js .title,
 .js .line {
   position: absolute;
@@ -189,6 +100,24 @@ body::after {
   white-space: nowrap;
 }
 
+/* ---------- Counter ---------- */
+
+.counter { display: none; }
+
+.js .counter {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  display: block;
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+.js.live .counter { visibility: hidden; }
+
 /* ---------- Links ---------- */
 
 .links {
@@ -198,70 +127,36 @@ body::after {
   bottom: var(--edge-b);
   z-index: 3;
   display: flex;
-  justify-content: center;
-  gap: 1.5rem;
+  justify-content: space-between;
   padding-left: var(--gutter-l);
   padding-right: var(--gutter-r);
-  font-size: 1.375rem;
-  letter-spacing: 0.1em;
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-/* Links invert like a selected terminal menu item */
+/* Underline draws in from the left on hover */
 .links a {
-  color: var(--phosphor);
-  padding: 0.05em 0.35em;
+  padding-block: 0.3rem;
+  background: linear-gradient(var(--ink), var(--ink)) no-repeat left bottom / 0 1px;
+  transition: background-size 0.35s cubic-bezier(0.65, 0.05, 0, 1);
 }
 
-.links a::before { content: "["; }
-.links a::after { content: "]"; }
+.links a::after { content: " \2197"; }
 
 .links a:hover,
 .links a:focus-visible {
-  background: var(--phosphor);
-  color: var(--bg);
-  text-shadow: none;
-  box-shadow: var(--glow);
+  background-size: 100% 1px;
   outline: none;
 }
 
-/* ---------- Loader ---------- */
-
-.loader { display: none; }
-
-.js .loader {
-  position: fixed;
-  left: 50%;
-  top: var(--logo-bottom, 60%);
-  z-index: 4;
-  transform: translateX(-50%);
-  display: block;
-  font-size: 1.375rem;
-  letter-spacing: 0.06em;
-  font-variant-numeric: tabular-nums;
-}
-
-/* The links wait for the line */
 .js .links { opacity: 0; }
-
-.js.live .loader {
-  animation: loader-out 0.3s steps(3) forwards;
-}
-
-@keyframes loader-out {
-  0% { opacity: 1; transform: translateX(-50%); }
-  50% { opacity: 0.5; transform: translateX(calc(-50% + 8px)); }
-  100% { opacity: 0; transform: translateX(-50%) scaleY(0.05); visibility: hidden; }
-}
-
-.js.live .links { opacity: 1; transition: opacity 0.3s steps(4) 1.2s; }
+.js.live .links { opacity: 1; transition: opacity 0.6s ease 0.9s; }
 
 /* ---------- Reduced motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {
-  body::after,
-  .crt::before,
-  .screen { animation: none; }
-  .js .loader { display: none; }
+  .js .counter { display: none; }
   .js .links { opacity: 1; transition: none; }
+  .links a { transition: none; }
 }
