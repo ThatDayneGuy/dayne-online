@@ -15,7 +15,8 @@
    carries a round lens. It spins slowly, and faster as you scroll. At the
    end of loading it turns to face you and the shutter clicks: the lens
    closes, the page flashes black, and the line appears.
-   A click or tap (not a drag) snaps focus brackets in around the spot.
+   A click or tap (not a drag) snaps rounded focus brackets in to the
+   corners of the screen, framing the whole page like a viewfinder.
    Behind it all, faint scanlines run across the page on the same raster
    as the bars (through every bar and every gap), with a slightly darker
    band rolling slowly down the screen like an old monitor's refresh.
@@ -355,40 +356,46 @@
   /* ------------------------------------------------------------------
      A click: focus brackets
   ------------------------------------------------------------------ */
-  var shots = []; // {x, y, at}
+  var shots = []; // [{at}] while the brackets are showing
   var FOCUS = { snap: 180, fadeFrom: 520, gone: 1000 }; // ms after the click
 
-  function focusBox() { return Math.max(28, Math.min(w, h) * 0.08); } // half the bracket box
-
-  function shoot(x, y) {
+  // One set of brackets framing the whole screen; a new click restarts it
+  function shoot() {
     if (reduceMotion || !live) return;
-    shots.push({ x: x, y: y, at: clock });
+    shots = [{ at: clock }];
   }
 
-  // Four corner brackets around each shot: they snap in from wide, with a
-  // touch of overshoot, hold, then fade
+  // Four rounded corner brackets at the corners of the screen: they snap
+  // in from just past the edges, with a touch of overshoot, hold, then fade.
+  // They sit outside the links, so they frame them without touching.
   function drawFocus() {
     if (!shots.length) return;
-    var B = focusBox();
-    var arm = B * 0.42, lw = Math.max(1, Math.round(2 * dpr));
-    ctx.fillStyle = INK;
-    shots = shots.filter(function (s) { return clock - s.at < FOCUS.gone; });
-    for (var i = 0; i < shots.length; i++) {
-      var s = shots[i], e = clock - s.at;
-      var p = Math.min(1, e / FOCUS.snap);
-      var grow = 1 + 0.9 * Math.pow(1 - p, 3) - 0.08 * Math.sin(p * Math.PI); // wide -> snap -> settle
-      ctx.globalAlpha = e < FOCUS.fadeFrom ? 1 : 1 - (e - FOCUS.fadeFrom) / (FOCUS.gone - FOCUS.fadeFrom);
-      var b = B * grow, a = arm;
-      for (var sx = -1; sx <= 1; sx += 2) {
-        for (var sy = -1; sy <= 1; sy += 2) {
-          var cx = s.x + sx * b, cy = s.y + sy * b;
-          // the horizontal arm and the vertical arm of this corner
-          ctx.fillRect(Math.round(Math.min(cx, cx - sx * a) * dpr), Math.round(cy * dpr - lw / 2), Math.round(a * dpr), lw);
-          ctx.fillRect(Math.round(cx * dpr - lw / 2), Math.round(Math.min(cy, cy - sy * a) * dpr), lw, Math.round(a * dpr));
-        }
-      }
+    var e = clock - shots[0].at;
+    if (e >= FOCUS.gone) { shots = []; return; }
+    var inset = Math.max(10, Math.min(w, h) * 0.012);
+    var arm = Math.max(28, Math.min(w, h) * 0.07);
+    var round = arm * 0.28; // corner radius
+    var p = Math.min(1, e / FOCUS.snap);
+    // from 0.8 of an arm outside, in to the inset, a little past it, back
+    var out = arm * (0.8 * Math.pow(1 - p, 3) - 0.1 * Math.sin(p * Math.PI));
+    var d = inset - out;
+    ctx.save();
+    ctx.globalAlpha = e < FOCUS.fadeFrom ? 1 : 1 - (e - FOCUS.fadeFrom) / (FOCUS.gone - FOCUS.fadeFrom);
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 2 * dpr;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    var corners = [[d, d, 1, 1], [w - d, d, -1, 1], [d, h - d, 1, -1], [w - d, h - d, -1, -1]];
+    for (var i = 0; i < 4; i++) {
+      var x = corners[i][0] * dpr, y = corners[i][1] * dpr, sx = corners[i][2], sy = corners[i][3];
+      var a = arm * dpr;
+      // along the top/bottom edge, round the corner, down/up the side
+      ctx.moveTo(x + sx * a, y);
+      ctx.arcTo(x, y, x, y + sy * a, round * dpr);
+      ctx.lineTo(x, y + sy * a);
     }
-    ctx.globalAlpha = 1;
+    ctx.stroke();
+    ctx.restore();
   }
 
   /* ------------------------------------------------------------------
@@ -427,7 +434,7 @@
     drag = null;
     // A press that barely moved and was quick is a click: take a photo
     if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) < 8 && performance.now() - press.at < 500) {
-      shoot(e.clientX, e.clientY);
+      shoot();
     }
     press = null;
   });
