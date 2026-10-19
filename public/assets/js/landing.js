@@ -15,8 +15,8 @@
    carries a round lens. It spins slowly, and faster as you scroll. At the
    end of loading it turns to face you and the shutter clicks: the lens
    closes, the page flashes black, and the line appears.
-   A click or tap (not a drag) snaps rounded focus brackets in to the
-   corners of the screen, framing the whole page like a viewfinder.
+   A click or tap (not a drag) snaps rounded focus brackets in around the
+   page, framing it like a viewfinder.
    Behind it all, faint scanlines run across the page on the same raster
    as the bars (through every bar and every gap), with a slightly darker
    band rolling slowly down the screen like an old monitor's refresh.
@@ -357,7 +357,8 @@
      A click: focus brackets
   ------------------------------------------------------------------ */
   var shots = []; // [{at}] while the brackets are showing
-  var FOCUS = { snap: 180, fadeFrom: 520, gone: 1000 }; // ms after the click
+  var FOCUS = { snap: 220, fadeFrom: 900, gone: 1500 }; // ms after the click
+  var linksEl = document.querySelector(".links");
 
   // One set of brackets framing the whole screen; a new click restarts it
   function shoot() {
@@ -365,24 +366,25 @@
     shots = [{ at: clock }];
   }
 
-  // Four rounded corner brackets at the corners of the screen: they snap
-  // in from just past the edges, with a touch of overshoot, hold, then fade.
-  // They sit outside the links, so they frame them without touching.
+  // Four rounded corner brackets framing the page: they snap in from just
+  // past the edges, with a touch of overshoot, hold, then fade. They sit
+  // inside the links (clear of them), well in from the edges of the screen.
   function drawFocus() {
     if (!shots.length) return;
     var e = clock - shots[0].at;
     if (e >= FOCUS.gone) { shots = []; return; }
-    var inset = Math.max(10, Math.min(w, h) * 0.012);
-    var arm = Math.max(28, Math.min(w, h) * 0.07);
+    var inset = Math.max(24, Math.min(w, h) * 0.06);
+    if (linksEl) inset = Math.max(inset, h - linksEl.getBoundingClientRect().top + 14);
+    var arm = Math.max(36, Math.min(w, h) * 0.1);
     var round = arm * 0.28; // corner radius
     var p = Math.min(1, e / FOCUS.snap);
     // from 0.8 of an arm outside, in to the inset, a little past it, back
-    var out = arm * (0.8 * Math.pow(1 - p, 3) - 0.1 * Math.sin(p * Math.PI));
+    var out = (inset + arm * 0.4) * Math.pow(1 - p, 3) - arm * 0.1 * Math.sin(p * Math.PI);
     var d = inset - out;
     ctx.save();
     ctx.globalAlpha = e < FOCUS.fadeFrom ? 1 : 1 - (e - FOCUS.fadeFrom) / (FOCUS.gone - FOCUS.fadeFrom);
     ctx.strokeStyle = INK;
-    ctx.lineWidth = 2 * dpr;
+    ctx.lineWidth = 3 * dpr;
     ctx.lineCap = "round";
     ctx.beginPath();
     var corners = [[d, d, 1, 1], [w - d, d, -1, 1], [d, h - d, 1, -1], [w - d, h - d, -1, -1]];
