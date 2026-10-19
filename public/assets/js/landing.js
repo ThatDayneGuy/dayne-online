@@ -8,13 +8,18 @@
    - a striped sun (bars thin at the top, full at the bottom) sits in the
      space above the line; where it crosses the type it inverts it, so the
      letters read as paper cut out of the sun
-   Sequence (the sunrise is the loader):
-   1. Night: the page opens dark, the sheet drawn in pale ink, and the slots
-      wipe in one at a time, alternating from the left and the right
-   2. Sunrise: the sun climbs slowly from behind the line to its place
+   Sequence (the birth of the sun is the loader), all in the bar language:
+   1. Void: the page fades up from black
+   2. Big bang: one point flashes where the sun will be and bursts into a
+      cloud of bar fragments flying outward
+   3. Nebula: the fragments slow, swirl and fall back in under gravity
+   4. Protostar: a striped disc condenses out of them, flickering as it grows
+   5. Ignition: a striped shock ring blasts outward and the sheet and the
+      type wipe in with it, slot by slot, alternating left and right
+   6. Sunrise: the sun climbs slowly (8s) from behind the line to its place
       above it. Daylight spreads out from the sun in a growing circle,
       day colours inside, night outside, until the whole page is day.
-   3. Live: the line loops forever, drifting left. Scrolling (wheel, drag,
+   7. Live: the line loops forever, drifting left. Scrolling (wheel, drag,
       arrow keys) pushes it sideways with momentum. Each slot has its own
       lag, so at speed the letters and the sun shear apart along the bars,
       then close up as the line slows.
@@ -69,7 +74,8 @@
   var lagByJ = {}; // keeps each slot's lag across a resize
   var ruleStep = 1;
   var offset = 0; // css px; the line's whole motion lives here
-  var sun = { x: 0, y: 0, r: 0, homeY: 0, startY: 0 };
+  var sun = { x: 0, y: 0, r: 0, cur: 0, homeY: 0, startY: 0 }; // cur = radius drawn now
+  var rasterBase = 0; // screen y of slot j=0's baseline edge
 
   function setFont(c, px) {
     c.font = WEIGHT + " " + px + "px " + FAMILY;
@@ -139,6 +145,7 @@
     // lead, slots below trail (capped, so far slots move as a block), and
     // neighbours alternate a little so the split reads as stripes.
     var base = stripTop + baseline; // screen y of the baseline
+    rasterBase = base;
     var jc = (jMax + jMin) / 2, half = Math.max(1, (jMax - jMin) / 2);
     rows = [];
     for (var k = Math.floor(base / pitch); k >= Math.ceil((base - thick - h) / pitch); k--) {
@@ -225,23 +232,22 @@
     for (var i = 0; i < rows.length; i++) {
       var row = rows[i];
       var r = reveal ? reveal(i) : 1;
-      if (r <= 0) continue;
       var mid = row.top + thick / 2;
-
-      var clipped = r < 1;
-      if (clipped) {
-        var y0 = Math.floor(row.top * dpr) - 1, y1 = Math.ceil((row.top + thick) * dpr) + 1;
+      var y0 = Math.floor(row.top * dpr) - 1, y1 = Math.ceil((row.top + thick) * dpr) + 1;
+      // The slot's wipe: type and rule only (the sun exists before the sheet)
+      var wipe = function () {
         c.save();
         c.beginPath();
         if (i % 2) c.rect(W * (1 - r), y0, W * r, y1 - y0);
         else c.rect(0, y0, W * r, y1 - y0);
         c.clip();
-      }
+      };
 
       // 1. The type. Whole pixels on both sides, so no bar samples a sliver
       //    of its neighbour's row (that shows up as a hairline in the gap).
       var b = row.bar;
-      if (b) {
+      if (b && r > 0) {
+        if (r < 1) wipe();
         var sy = Math.round(b.top * scale);
         var sh = Math.max(1, Math.round((b.top + b.height) * scale) - sy);
         var dy = stripTopD + Math.round(sy * f);
@@ -251,14 +257,15 @@
         for (var x0 = start; x0 < W; x0 += periodD) {
           c.drawImage(type, 0, sy, type.width, sh, Math.round(x0), dy, type.width * f, dh);
         }
+        if (r < 1) c.restore();
       }
 
       // 2. The sun: one bar per slot it crosses, thin at the top, full at
       //    the bottom. XOR inverts the type wherever the two meet.
-      var dyS = mid - sun.y;
-      if (Math.abs(dyS) < sun.r) {
-        var halfW = Math.sqrt(sun.r * sun.r - dyS * dyS);
-        var th = thick * (0.18 + 0.82 * (dyS + sun.r) / (2 * sun.r));
+      var R = sun.cur, dyS = mid - sun.y;
+      if (R > 0.5 && Math.abs(dyS) < R) {
+        var halfW = Math.sqrt(R * R - dyS * dyS);
+        var th = thick * (0.18 + 0.82 * (dyS + R) / (2 * R));
         var thD = Math.max(1, Math.round(th * dpr));
         var yD = Math.round(mid * dpr - thD / 2);
         var x1 = Math.round((sun.x - halfW - row.lag) * dpr);
@@ -269,14 +276,87 @@
       }
 
       // 3. The rule, behind everything already in the slot
-      if (((row.j % ruleStep) + ruleStep) % ruleStep === 0) {
+      if (r > 0 && ((row.j % ruleStep) + ruleStep) % ruleStep === 0) {
+        if (r < 1) wipe();
         c.globalCompositeOperation = "destination-over";
         c.fillStyle = rule;
         c.fillRect(0, Math.round(mid * dpr - hair / 2), W, hair);
+        if (r < 1) c.restore();
       }
 
       c.globalCompositeOperation = "source-over";
-      if (clipped) c.restore();
+    }
+  }
+
+  /* ------------------------------------------------------------------
+     The birth of the sun: specks of bar (on the raster, like everything
+     else) burst out from a point, swirl back in, and a shock ring marks
+     ignition. Drawn over the night scene only.
+  ------------------------------------------------------------------ */
+  var SPECKS = [];
+  for (var n = 0; n < 110; n++) {
+    SPECKS.push({
+      a: n * 2.39996, // golden angle: an even spray with no clumps
+      s: 0.3 + Math.random() * 0.7, // how far it flies
+      spin: (n % 2 ? 1 : -1) * (0.5 + Math.random() * 0.9) // swirl on the way back
+    });
+  }
+
+  // Snap a y position to the middle of the nearest slot
+  function slotMid(y) {
+    var j = Math.round((rasterBase - thick / 2 - y) / pitch);
+    return rasterBase - j * pitch - thick / 2;
+  }
+
+  // bar(c, ink, x1, x2, y, th): one horizontal bar in device pixels
+  function bar(c, x1, x2, y, th) {
+    var t = Math.max(1, Math.round(th * dpr));
+    c.fillRect(Math.round(x1 * dpr), Math.round(y * dpr - t / 2), Math.max(1, Math.round((x2 - x1) * dpr)), t);
+  }
+
+  function drawBirth(c, ink, tb) {
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.globalCompositeOperation = "source-over";
+    c.fillStyle = ink;
+    var cx = sun.x, cy = sun.startY;
+    var reach = Math.min(w, h) * 0.45;
+
+    // The point, flaring before it bursts
+    if (tb >= 0 && tb < BANG.burst) {
+      var fl = ease(tb / BANG.burst);
+      bar(c, cx - thick * (0.5 + fl * 2.5), cx + thick * (0.5 + fl * 2.5), slotMid(cy), thick * (0.4 + fl * 0.6));
+    }
+
+    // Specks: out, then back in along a spiral
+    var p1 = clamp((tb - BANG.burst) / BANG.out, 0, 1);
+    var p2 = clamp((tb - BANG.burst - BANG.out) / BANG.back, 0, 1);
+    if (tb >= BANG.burst && p2 < 1) {
+      c.globalAlpha = p2 > 0.75 ? (1 - p2) / 0.25 : 1;
+      for (var i = 0; i < SPECKS.length; i++) {
+        var sp = SPECKS[i];
+        var rad = sp.s * reach * ease(p1) * (1 - p2 * p2 * p2);
+        var ang = sp.a + sp.spin * Math.PI * p2 * p2;
+        var x = cx + Math.cos(ang) * rad, y = slotMid(cy + Math.sin(ang) * rad * 0.8);
+        // Long streaks at the burst, short grains in the cloud, longer as they fall in
+        var len = thick * (p2 > 0 ? 0.8 + 2 * p2 : 4 * (1 - p1) + 0.8);
+        bar(c, x - len / 2, x + len / 2, y, thick * 0.55);
+      }
+      c.globalAlpha = 1;
+    }
+
+    // Ignition: a striped shock ring
+    var p4 = clamp((tb - BANG.ignite) / BANG.shock, 0, 1);
+    if (p4 > 0 && p4 < 1) {
+      var ro = sun.r * (1 + 2.6 * ease(p4)), ri = ro - sun.r * 0.35 * (1 - p4);
+      c.globalAlpha = 1 - p4;
+      for (var k = 0; k < rows.length; k++) {
+        var my = rows[k].top + thick / 2, dy = my - cy;
+        if (Math.abs(dy) >= ro) continue;
+        var ho = Math.sqrt(ro * ro - dy * dy), hi = Math.abs(dy) < ri ? Math.sqrt(ri * ri - dy * dy) : 0;
+        bar(c, cx - ho, cx - hi, my, thick * 0.6);
+        bar(c, cx + hi, cx + ho, my, thick * 0.6);
+      }
+      c.globalAlpha = 1;
     }
   }
 
@@ -286,13 +366,17 @@
   }
 
   // Sunrise: night everywhere, then day inside a circle around the sun
-  function drawDawn(reveal, dawnR) {
+  // `fade` 0..1 brings the night up out of black; `tb` is ms since the bang
+  function drawDawn(reveal, dawnR, fade, tb) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = "source-over";
     ctx.fillStyle = NIGHT;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     drawScene(lctx, NIGHT_INK, NIGHT_RULE, reveal);
+    if (tb < BANG.ignite + BANG.shock) drawBirth(lctx, NIGHT_INK, tb);
+    ctx.globalAlpha = fade;
     ctx.drawImage(layer, 0, 0);
+    ctx.globalAlpha = 1;
     if (dawnR <= 0) return;
     ctx.save();
     ctx.beginPath();
@@ -351,7 +435,21 @@
   var repeat = false;
   try { repeat = !!sessionStorage.getItem("booted"); sessionStorage.setItem("booted", "1"); } catch (e) {}
   var WIPE = 650, SWEEP = 900; // ms per slot wipe; ms from first to last slot
-  var RISE_AT = repeat ? 200 : 500, RISE_MS = repeat ? 1800 : 5000; // the sunrise
+  // The birth, in ms (a repeat visit in the same session runs it faster)
+  var Q = repeat ? 0.35 : 1;
+  var FADE_MS = 1000 * Q; // the void fades up
+  var BANG_AT = 500 * Q; // the point appears
+  var BANG = {
+    burst: 250 * Q, // the point flares
+    out: 1000 * Q, // specks fly outward
+    back: 1500 * Q, // and swirl back in
+    proto: 2200 * Q, // the protostar starts to condense (from the bang)
+    grow: 1000 * Q, // and takes this long to reach full size
+    ignite: 3300 * Q, // ignition: shock ring, the sheet wipes in
+    shock: 900 * Q
+  };
+  var REVEAL_AT = BANG_AT + BANG.ignite;
+  var RISE_AT = REVEAL_AT + 200 * Q, RISE_MS = repeat ? 2500 : 8000; // the sunrise
   var DAWN_FROM = 0.2; // share of the rise before daylight starts to spread
 
   function ease(x) { return 1 - Math.pow(1 - x, 3); }
@@ -364,9 +462,10 @@
     if (reduceMotion) {
       live = true;
       sun.y = sun.homeY;
+      sun.cur = sun.r;
       docEl.classList.add("day");
       drawDay();
-      window.addEventListener("resize", function () { layout(); offset = startOffset(); sun.y = sun.homeY; drawDay(); });
+      window.addEventListener("resize", function () { layout(); offset = startOffset(); sun.y = sun.homeY; sun.cur = sun.r; drawDay(); });
       return;
     }
 
@@ -380,7 +479,8 @@
       prev = now;
 
       var stagger = rows.length > 1 ? SWEEP / (rows.length - 1) : 0;
-      var revealing = t < SWEEP + WIPE;
+      var since = t - REVEAL_AT;
+      var revealing = since < SWEEP + WIPE;
       if (!revealing) live = true;
 
       // Momentum eases back to the resting drift
@@ -397,16 +497,20 @@
       }
 
       // The sun climbs from behind the line; daylight spreads from it
+      var tb = t - BANG_AT;
+      var grow = clamp((tb - BANG.proto) / BANG.grow, 0, 1);
+      // The protostar flickers as it condenses, then holds steady
+      sun.cur = sun.r * ease(grow) * (1 + 0.06 * Math.sin(tb / 60) * (1 - grow));
       var rise = clamp((t - RISE_AT) / RISE_MS, 0, 1);
       sun.y = sun.startY + (sun.homeY - sun.startY) * easeInOut(rise);
       var dawn = easeInOut(clamp((rise - DAWN_FROM) / (1 - DAWN_FROM), 0, 1));
 
-      var reveal = revealing ? function (i) { return ease(clamp((t - i * stagger) / WIPE, 0, 1)); } : null;
+      var reveal = revealing ? function (i) { return ease(clamp((since - i * stagger) / WIPE, 0, 1)); } : null;
       if (dawn < 1) {
         // Far enough to reach the furthest corner from the sun
         var reach = Math.max(Math.hypot(sun.x, sun.y), Math.hypot(w - sun.x, sun.y),
           Math.hypot(sun.x, h - sun.y), Math.hypot(w - sun.x, h - sun.y));
-        drawDawn(reveal, dawn * reach);
+        drawDawn(reveal, dawn * reach, clamp(t / FADE_MS, 0, 1), tb);
       } else {
         if (!isDay) { isDay = true; docEl.classList.add("day"); }
         drawDay(reveal);
