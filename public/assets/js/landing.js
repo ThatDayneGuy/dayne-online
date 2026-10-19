@@ -9,9 +9,12 @@
       arrow keys) pushes it sideways with momentum. Each bar has its own
       lag, so at speed the letters shear apart along the bars, then close
       up again as the line slows.
-   The logo is a cube drawn in the same bars: each face's bars are as thick
-   as that face is lit (engraving-style shading), so it reads as 3D. It
-   spins slowly, and faster as you scroll.
+   The logo is a box camera (the first camera: a box with a hole in it)
+   drawn in the same bars: each face's bars are as thick as that face is
+   lit (engraving-style shading), so it reads as 3D, and the front face
+   carries a round lens. It spins slowly, and faster as you scroll. At the
+   end of loading it turns to face you and the shutter clicks: the lens
+   closes, the page flashes black, and the line appears.
    The type is rendered once into an offscreen strip; each frame draws that
    strip bar by bar, so every bar edge lands on a whole device pixel.
    No dependencies. Reduced motion: no counter, a still line, no loop.
@@ -55,9 +58,10 @@
   var logoXs = [], slotW = 0; // logo centres within one period; its slot
   var cubeS = 10, cubeY = 0; // the cube in the line: half-edge, centre y
   var spin = 0.6; // the cube's rotation, radians
+  var shutter = 0; // 0 = lens open .. 1 = closed
 
   /* ------------------------------------------------------------------
-     The logo: a cube in bars
+     The logo: a box camera in bars
   ------------------------------------------------------------------ */
   var VERTS = [];
   for (var v = 0; v < 8; v++) VERTS.push([v & 1 ? 1 : -1, v & 2 ? 1 : -1, v & 4 ? 1 : -1]);
@@ -67,7 +71,7 @@
     { q: [4, 5, 7, 6], n: [0, 0, 1] }, { q: [0, 2, 3, 1], n: [0, 0, -1] }
   ];
   var TILT = 0.6; // tipped toward the viewer so the top face shows
-  var LIGHT = (function (l) { var m = Math.hypot(l[0], l[1], l[2]); return [l[0] / m, l[1] / m, l[2] / m]; })([-0.45, 0.8, 0.5]);
+  var LIGHT = (function (l) { var m = Math.hypot(l[0], l[1], l[2]); return [l[0] / m, l[1] / m, l[2] / m]; })([-0.3, 0.5, 0.85]); // from the front, so the lens face is the bold one
 
   // Spin about the vertical axis, then tilt; viewer looks down -z
   function turn(p, a) {
@@ -76,8 +80,23 @@
     return [x, p[1] * Math.cos(TILT) - z * Math.sin(TILT), p[1] * Math.sin(TILT) + z * Math.cos(TILT)];
   }
 
+  var FRONT = 4; // the z+ face carries the lens
+  var HOLE = 0.58, GLASS = 0.24; // lens opening and the glass inside, in face units
+
+  // A circle on the front face, turned and projected flat
+  function onFront(rad, a) {
+    var poly = [];
+    for (var k = 0; k < 24; k++) {
+      var th = k / 24 * Math.PI * 2, p = turn([rad * Math.cos(th), rad * Math.sin(th), 1], a);
+      poly.push([p[0], -p[1]]);
+    }
+    return poly;
+  }
+
   // The visible faces at angle a, projected flat (orthographic, unit size)
-  // with how thick their bars are (0.22 in shadow .. 1 fully lit)
+  // with how thick their bars are (0.14 in shadow .. 1 fully lit). The
+  // front face also carries its lens: the opening, and the glass inside,
+  // which grows to fill the opening as the shutter closes.
   function cubeFaces(a) {
     var pts = VERTS.map(function (p) { return turn(p, a); });
     var out = [];
@@ -85,9 +104,27 @@
       var n = turn(FACES[i].n, a);
       if (n[2] <= 0.001) continue;
       var lit = Math.max(0, n[0] * LIGHT[0] + n[1] * LIGHT[1] + n[2] * LIGHT[2]);
-      out.push({ pts: FACES[i].q.map(function (k) { return [pts[k][0], -pts[k][1]]; }), weight: 0.14 + 0.86 * lit });
+      var face = { pts: FACES[i].q.map(function (k) { return [pts[k][0], -pts[k][1]]; }), weight: 0.14 + 0.86 * lit };
+      if (i === FRONT) {
+        face.hole = onFront(HOLE, a);
+        face.glass = onFront(GLASS + (HOLE - GLASS) * shutter, a);
+      }
+      out.push(face);
     }
     return out;
+  }
+
+  // Where a horizontal line at height u crosses a convex polygon: [lo, hi]
+  function span(poly, u) {
+    var lo = Infinity, hi = -Infinity;
+    for (var e = 0; e < poly.length; e++) {
+      var a = poly[e], b = poly[(e + 1) % poly.length];
+      if ((u - a[1]) * (u - b[1]) > 0 || a[1] === b[1]) continue;
+      var x = a[0] + (b[0] - a[0]) * (u - a[1]) / (b[1] - a[1]);
+      lo = Math.min(lo, x);
+      hi = Math.max(hi, x);
+    }
+    return hi > lo ? [lo, hi] : null;
   }
 
   // Draw the cube's slice on one bar row: for each visible face, the span
@@ -95,21 +132,23 @@
   function cubeRow(c, faces, cx, cy, S, mid) {
     var u = (mid - cy) / S; // the row's height in cube units
     var gapD = Math.max(1, Math.round(dpr * Math.max(1, S * 0.03)));
-    for (var i = 0; i < faces.length; i++) {
-      var q = faces[i].pts, lo = Infinity, hi = -Infinity;
-      for (var e = 0; e < 4; e++) {
-        var a = q[e], b = q[(e + 1) % 4];
-        if ((u - a[1]) * (u - b[1]) > 0 || a[1] === b[1]) continue;
-        var x = a[0] + (b[0] - a[0]) * (u - a[1]) / (b[1] - a[1]);
-        lo = Math.min(lo, x);
-        hi = Math.max(hi, x);
-      }
-      if (hi <= lo) continue;
-      var t = Math.max(1, Math.round(thick * faces[i].weight * dpr));
+    var yD = function (t) { return Math.round(mid * dpr - t / 2); };
+    var seg = function (lo, hi, t) {
       // A hairline gap either side, so the edges between faces show
       var x1 = Math.round((cx + lo * S) * dpr) + gapD, x2 = Math.round((cx + hi * S) * dpr) - gapD;
-      if (x2 <= x1) continue;
-      c.fillRect(x1, Math.round(mid * dpr - t / 2), x2 - x1, t);
+      if (x2 > x1) c.fillRect(x1, yD(t), x2 - x1, t);
+    };
+    for (var i = 0; i < faces.length; i++) {
+      var f = faces[i], sp = span(f.pts, u);
+      if (!sp) continue;
+      var t = Math.max(1, Math.round(thick * f.weight * dpr));
+      var hole = f.hole && span(f.hole, u);
+      if (!hole) { seg(sp[0], sp[1], t); continue; }
+      // The face either side of the lens opening, then the glass in it
+      seg(sp[0], hole[0], t);
+      seg(hole[1], sp[1], t);
+      var glass = span(f.glass, u);
+      if (glass) seg(glass[0], glass[1], Math.max(t, Math.round(thick * 0.9 * dpr)));
     }
   }
 
@@ -331,6 +370,10 @@
   try { repeat = !!sessionStorage.getItem("booted"); sessionStorage.setItem("booted", "1"); } catch (e) {}
   var COUNT_MS = repeat ? 500 : 1400;
   var STAGGER = 45, WIPE = 650;
+  var FACING = 0.45; // a three-quarter view with the lens toward us
+  var SHOT = { turn: repeat ? 250 : 500, close: 110, flash: 140, open: 160 }; // ms
+
+  function easeInOut(x) { return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
 
   function ease(x) { return 1 - Math.pow(1 - x, 3); }
 
@@ -349,6 +392,7 @@
     window.addEventListener("resize", layout);
 
     var t0 = performance.now(), prev = t0, revealAt = 0;
+    var shotAt = 0, spinFrom = 0, spinTo = 0;
     var loaded = document.readyState === "complete";
     window.addEventListener("load", function () { loaded = true; });
 
@@ -361,11 +405,35 @@
         var p = ease(Math.min(1, t / COUNT_MS));
         if (!loaded) p = Math.min(p, 0.92);
         if (pctEl) pctEl.textContent = ("00" + Math.round(p * 100)).slice(-3);
-        spin += 0.03 * k;
-        drawLoader();
-        if (p >= 1) {
-          revealAt = t + 120;
-          docEl.classList.add("live");
+        if (p < 1 || !shotAt) {
+          spin += 0.03 * k;
+          if (p >= 1) {
+            // Loaded: turn the camera to face us for the shot
+            shotAt = t;
+            spinFrom = spin;
+            spinTo = Math.ceil((spin - FACING) / (Math.PI * 2)) * Math.PI * 2 + FACING;
+          }
+          drawLoader();
+        } else {
+          // The shot: face us, the shutter closes, a black flash, it opens,
+          // and the line appears
+          var sh = t - shotAt;
+          spin = spinFrom + (spinTo - spinFrom) * easeInOut(Math.min(1, sh / SHOT.turn));
+          var c0 = SHOT.turn, c1 = c0 + SHOT.close, c2 = c1 + SHOT.open;
+          shutter = sh < c0 ? 0 : sh < c1 ? (sh - c0) / SHOT.close : sh < c2 ? 1 - (sh - c1) / SHOT.open : 0;
+          drawLoader();
+          var fl = (sh - c1) / SHOT.flash;
+          if (fl >= 0 && fl < 1) {
+            ctx.globalAlpha = 1 - fl * fl;
+            ctx.fillStyle = INK;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.globalAlpha = 1;
+          }
+          if (sh >= c2) {
+            shutter = 0;
+            revealAt = t;
+            docEl.classList.add("live");
+          }
         }
         requestAnimationFrame(frame);
         return;
