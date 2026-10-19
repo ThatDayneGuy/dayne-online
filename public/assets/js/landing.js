@@ -8,6 +8,9 @@
    - a striped sun (bars thin at the top, full at the bottom) sits in the
      space above the line; where it crosses the type it inverts it, so the
      letters read as paper cut out of the sun
+   - below the line, the Cape Town skyline in the same bars: Signal Hill,
+     Lion's Head, Kloof Nek, Table Mountain's flat top, Devil's Peak. The
+     sun rises from behind Table Mountain.
    Sequence (the birth of the sun is the loader), all in the bar language:
    1. Void: the page fades up from black
    2. Big bang: one point flares where the sun will be and bursts into a
@@ -20,7 +23,8 @@
       flash, three shock rings past the screen edges, the screen shakes,
       the star snaps to full size, and the sheet and the type wipe in
       slot by slot, alternating left and right
-   6. Sunrise: the sun climbs slowly (8s) from behind the line to its place
+   6. Sunrise: the sun climbs slowly (8s) from behind Table Mountain, past
+      the line, to its place
       above it. Daylight spreads out from the sun in a growing circle,
       day colours inside, night outside, until the whole page is day.
    7. Live: the line loops forever, drifting left. Scrolling (wheel, drag,
@@ -63,6 +67,28 @@
   var TEXT = NAME + " — coming soon — ";
   var BAR = 0.62; // bar thickness as a share of the bar pitch (rest is gap)
   var RULE_GAP = 10; // css px: hairlines are never closer together than this
+  var MOUNTAIN_BAR = 0.5; // mountain bars are thinner than the type's, so it sits back
+
+  // The skyline from the city bowl, left to right, as [x, height] with x
+  // 0..1 across the screen and height 0..1 of Table Mountain's flat top.
+  // Real proportions: the table (1085m) is the highest point, Devil's Peak
+  // (1000m) a touch lower, Lion's Head (669m) and Signal Hill well below.
+  var SKYLINE = [
+    [0, 0.12], [0.04, 0.24], [0.09, 0.31], [0.13, 0.32], // Signal Hill
+    [0.17, 0.44], [0.205, 0.62], [0.22, 0.59], [0.245, 0.44], // Lion's Head
+    [0.27, 0.41], // Kloof Nek
+    [0.30, 0.56], [0.325, 0.86], [0.345, 0.99], [0.36, 1], // the western cliffs
+    [0.66, 1], [0.68, 0.97], [0.72, 0.86], [0.755, 0.8], // the table, down to the saddle
+    [0.79, 0.92], [0.81, 0.89], // Devil's Peak
+    [0.86, 0.62], [0.92, 0.42], [1, 0.3]
+  ];
+  function skyline(u) {
+    for (var i = 1; i < SKYLINE.length; i++) {
+      var a = SKYLINE[i - 1], b = SKYLINE[i];
+      if (u <= b[0]) return a[1] + (b[1] - a[1]) * (u - a[0]) / (b[0] - a[0]);
+    }
+    return SKYLINE[SKYLINE.length - 1][1];
+  }
 
   /* ------------------------------------------------------------------
      Layout: size the type, render one period of the line into the strip,
@@ -163,13 +189,35 @@
     }
     ruleStep = Math.max(1, Math.ceil(RULE_GAP / pitch));
 
-    // The sun: centred above the type at rest; it starts low, half behind
-    // the line, and rises to its place
+    // The skyline: the table's top sits a slot and a half under the type
+    // (or lower), its foot stops clear of the links. Each slot gets the spans where
+    // the mountain is above it.
+    var last = bars[bars.length - 1];
+    var mFoot = h - Math.max(56, h * 0.07);
+    // Keep the real proportions: never taller than ~0.3 of the screen's
+    // width, so on a tall phone it sits low instead of stretching into spires
+    var mTop = Math.max(stripTop + (last ? last.top + last.height : 0) + pitch * 1.5, mFoot - w * 0.3);
+    var step = 2;
+    for (var m = 0; m < rows.length; m++) {
+      var row = rows[m], my = row.top + thick / 2, spans = [];
+      if (my > mTop && my < mFoot) {
+        var runStart = -1;
+        for (var px = 0; px <= w + step; px += step) {
+          var inside = px <= w && mFoot - skyline(px / w) * (mFoot - mTop) <= my;
+          if (inside && runStart < 0) runStart = px;
+          if (!inside && runStart >= 0) { spans.push([runStart, Math.min(w, px)]); runStart = -1; }
+        }
+      }
+      row.mtn = spans;
+    }
+
+    // The sun: centred above the type at rest; it starts low, mostly hidden
+    // behind Table Mountain, and rises to its place
     var typeTop = stripTop + (bars.length ? bars[0].top : 0);
     sun.r = Math.max(24, Math.min(typeTop * 0.36, w * 0.2));
     sun.x = w / 2;
     sun.homeY = typeTop / 2;
-    sun.startY = h / 2 + sun.r * 0.5;
+    sun.startY = mTop + sun.r * 0.45;
   }
 
   // Trim slivers: where a letter edge falls just inside a bar (the top of a
@@ -279,7 +327,24 @@
         c.fillRect(x1, yD, x2 - x1, thD);
       }
 
-      // 3. The rule, behind everything already in the slot
+      // 3. The mountain, in front of the sun: clear the sun out of each
+      //    span, then lay the mountain's (thinner) bar
+      if (r > 0 && row.mtn.length) {
+        if (r < 1) wipe();
+        c.globalCompositeOperation = "source-over";
+        c.fillStyle = ink;
+        var mt = Math.max(1, Math.round(thick * MOUNTAIN_BAR * dpr));
+        var my0 = Math.round(mid * dpr - mt / 2);
+        var shift = row.lag * 0.5; // the mountain sits back, so it shears less
+        for (var q = 0; q < row.mtn.length; q++) {
+          var sx1 = Math.round((row.mtn[q][0] - shift) * dpr), sx2 = Math.round((row.mtn[q][1] - shift) * dpr);
+          c.clearRect(sx1, y0, sx2 - sx1, y1 - y0);
+          c.fillRect(sx1, my0, sx2 - sx1, mt);
+        }
+        if (r < 1) c.restore();
+      }
+
+      // 4. The rule, behind everything already in the slot
       if (r > 0 && ((row.j % ruleStep) + ruleStep) % ruleStep === 0) {
         if (r < 1) wipe();
         c.globalCompositeOperation = "destination-over";
