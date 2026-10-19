@@ -15,6 +15,8 @@
    carries a round lens. It spins slowly, and faster as you scroll. At the
    end of loading it turns to face you and the shutter clicks: the lens
    closes, the page flashes black, and the line appears.
+   A click or tap (not a drag) takes a photo: focus brackets snap in
+   around the spot, then the page flashes to a negative for an instant.
    Behind it all, faint scanlines run across the page on the same raster
    as the bars (through every bar and every gap), with a slightly darker
    band rolling slowly down the screen like an old monitor's refresh.
@@ -348,6 +350,49 @@
       }
       ctx.restore();
     }
+    drawFocus();
+  }
+
+  /* ------------------------------------------------------------------
+     Taking a photo: focus brackets, then a negative flash
+  ------------------------------------------------------------------ */
+  var shots = []; // {x, y, at}
+  var FOCUS = { snap: 180, flash: 230, flashFor: 110, fadeFrom: 420, gone: 900 }; // ms after the click
+  var negative = document.querySelector("[data-negative]");
+
+  function shoot(x, y) {
+    if (reduceMotion || !live) return;
+    shots.push({ x: x, y: y, at: clock });
+    if (negative) {
+      setTimeout(function () { negative.classList.add("on"); }, FOCUS.flash);
+      setTimeout(function () { negative.classList.remove("on"); }, FOCUS.flash + FOCUS.flashFor);
+    }
+  }
+
+  // Four corner brackets around each shot: they snap in from wide, with a
+  // touch of overshoot, hold through the flash, then fade
+  function drawFocus() {
+    if (!shots.length) return;
+    var B = Math.max(28, Math.min(w, h) * 0.08); // half the bracket box
+    var arm = B * 0.42, lw = Math.max(1, Math.round(2 * dpr));
+    ctx.fillStyle = INK;
+    shots = shots.filter(function (s) { return clock - s.at < FOCUS.gone; });
+    for (var i = 0; i < shots.length; i++) {
+      var s = shots[i], e = clock - s.at;
+      var p = Math.min(1, e / FOCUS.snap);
+      var grow = 1 + 0.9 * Math.pow(1 - p, 3) - 0.08 * Math.sin(p * Math.PI); // wide -> snap -> settle
+      ctx.globalAlpha = e < FOCUS.fadeFrom ? 1 : 1 - (e - FOCUS.fadeFrom) / (FOCUS.gone - FOCUS.fadeFrom);
+      var b = B * grow, a = arm;
+      for (var sx = -1; sx <= 1; sx += 2) {
+        for (var sy = -1; sy <= 1; sy += 2) {
+          var cx = s.x + sx * b, cy = s.y + sy * b;
+          // the horizontal arm and the vertical arm of this corner
+          ctx.fillRect(Math.round(Math.min(cx, cx - sx * a) * dpr), Math.round(cy * dpr - lw / 2), Math.round(a * dpr), lw);
+          ctx.fillRect(Math.round(cx * dpr - lw / 2), Math.round(Math.min(cy, cy - sy * a) * dpr), lw, Math.round(a * dpr));
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
   }
 
   /* ------------------------------------------------------------------
@@ -368,10 +413,11 @@
     push(-d * 0.045);
   }, { passive: true });
 
-  var drag = null;
+  var drag = null, press = null;
   window.addEventListener("pointerdown", function (e) {
     if (e.target.closest && e.target.closest("a")) return;
     drag = { x: e.clientX, y: e.clientY };
+    press = { x: e.clientX, y: e.clientY, at: performance.now() };
   });
   window.addEventListener("pointermove", function (e) {
     if (!drag) return;
@@ -381,8 +427,15 @@
     // Sideways drags pull the line along; vertical ones scroll it
     push((Math.abs(dx) > Math.abs(dy) ? dx : -dy) * 0.35);
   });
-  window.addEventListener("pointerup", function () { drag = null; });
-  window.addEventListener("pointercancel", function () { drag = null; });
+  window.addEventListener("pointerup", function (e) {
+    drag = null;
+    // A press that barely moved and was quick is a click: take a photo
+    if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) < 8 && performance.now() - press.at < 500) {
+      shoot(e.clientX, e.clientY);
+    }
+    press = null;
+  });
+  window.addEventListener("pointercancel", function () { drag = null; press = null; });
 
   window.addEventListener("keydown", function (e) {
     var k = e.key;

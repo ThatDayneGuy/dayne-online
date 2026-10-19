@@ -123,6 +123,22 @@ a { color: inherit; text-decoration: none; }
 
 .js.live .counter { visibility: hidden; }
 
+/* ---------- Negative flash ---------- */
+
+/* White with difference blending inverts everything under it: the page
+   becomes its own film negative while .on is set (a click's "shutter") */
+.negative {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  background: #fff;
+  mix-blend-mode: difference;
+  visibility: hidden;
+}
+
+.negative.on { visibility: visible; }
+
 /* ---------- Links ---------- */
 
 .links {
