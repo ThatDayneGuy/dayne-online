@@ -125,19 +125,27 @@ a { color: inherit; text-decoration: none; }
 
 /* ---------- Negative flash ---------- */
 
-/* White with difference blending inverts everything under it: the page
-   becomes its own film negative while .on is set (a click's "shutter") */
+/* White with difference blending inverts whatever is under it. On a
+   click, landing.js sizes this to the focus brackets, so just the framed
+   area turns negative: a quick fade in, a slower fade out. */
 .negative {
   position: fixed;
-  inset: 0;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
   z-index: 10;
   pointer-events: none;
   background: #fff;
   mix-blend-mode: difference;
-  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.35s ease-out;
 }
 
-.negative.on { visibility: visible; }
+.negative.on {
+  opacity: 1;
+  transition: opacity 0.09s ease-in;
+}
 
 /* ---------- Links ---------- */
 
