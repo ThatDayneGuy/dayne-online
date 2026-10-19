@@ -133,12 +133,16 @@ a { color: inherit; text-decoration: none; }
   z-index: 3;
   display: flex;
   justify-content: space-between;
+  gap: 1rem;
   padding-left: var(--gutter-l);
   padding-right: var(--gutter-r);
   font-size: var(--text-xs);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+
+/* A lone link (Email, until Instagram is added) keeps its right corner */
+.links a:only-child { margin-left: auto; }
 
 /* Underline draws in from the left on hover */
 .links a {

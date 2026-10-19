@@ -49,6 +49,17 @@ says which file is at fault, and it's almost always a typo in frontmatter.
 
 ---
 
+## The temporary landing page (current home page)
+
+While the full site is being built, `/` is a standalone "coming soon" page:
+`src/pages/index.astro`, styled by `public/assets/css/landing.css`, animated by
+`public/assets/js/landing.js` (one canvas: the barred type, the box-camera logo,
+scanlines, click-to-focus brackets). It does not use `Base.astro`. The favicon is
+`public/assets/img/logo.svg`. The other pages (work, journal, about, archive) still
+build and are reachable by URL. To bring the full home page back, restore
+`src/pages/index.astro` from the "Migrate to Astro" commit (keep the landing page
+at another path if you want it).
+
 ## How to: add a journal entry
 
 Create `src/content/journal/your-slug.md` (the filename becomes the URL):
