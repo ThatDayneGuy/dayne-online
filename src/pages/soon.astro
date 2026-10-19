@@ -2,21 +2,20 @@
 // Temporary landing page (green-phosphor terminal). Standalone on purpose:
 // it does not use Base.astro, so it carries none of the site's header,
 // menu, transitions or GSAP stack. Styling lives in /assets/css/landing.css
-// and motion in /assets/js/landing.js (the pixel title and boot logo are
-// drawn on a canvas there; the <h1> stays in the DOM for screen readers
-// and no-JS). To make it live, render this page as the home page.
+// and motion in /assets/js/landing.js: a pixel logo boots, bursts into one
+// giant looping line of pixel text, and scrolling drives that line sideways.
+// The real text stays in the DOM for screen readers and no-JS.
+// To make it live, render this page as the home page.
 const FAVICON =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23050805'/%3E%3Cpath d='M8 7h12v2h2v2h2v10h-2v2h-2v2H8z M12 11v10h6v-2h2v-6h-2v-2z' fill='%233cf06e' fill-rule='evenodd'/%3E%3C/svg%3E";
 
-const SEGMENTS = 24;
-
-// Boot log: each line prints once the loader passes its threshold (0-1)
+// Boot log: the loader shows the latest line it has passed (threshold 0-1)
 const LOG = [
-  { at: 0.05, text: "ДН-04 СИСТЕМА v1.0" },
-  { at: 0.2, text: "ПАМЯТЬ ......... 640K OK" },
-  { at: 0.4, text: "ЗАГРУЗКА ФОТО .. 24 КАДРА" },
-  { at: 0.6, text: "ЛИНИЯ СВЯЗИ .... OK" },
-  { at: 0.85, text: "> DAYNE.ONLINE  ГОТОВО" }
+  { at: 0, text: "ДН-04 СИСТЕМА v1.0" },
+  { at: 0.2, text: "ПАМЯТЬ 640K OK" },
+  { at: 0.4, text: "ЗАГРУЗКА ФОТО: 24 КАДРА" },
+  { at: 0.6, text: "ЛИНИЯ СВЯЗИ OK" },
+  { at: 0.85, text: "ГОТОВО" }
 ];
 ---
 <!DOCTYPE html>
@@ -48,25 +47,23 @@ const LOG = [
 <body>
     <canvas class="screen" aria-hidden="true" data-screen></canvas>
 
-    <div class="loader" aria-hidden="true" data-loader>
+    <div class="loader" aria-hidden="true">
         <ul class="loader-log">
             {LOG.map((l) => <li data-at={l.at}>{l.text}</li>)}
         </ul>
-        <div class="loader-bar">
-            {Array.from({ length: SEGMENTS }, () => <i></i>)}
-        </div>
         <span class="loader-pct" data-pct>000%</span>
     </div>
 
     <main class="stage" id="main">
-        <h1 class="title" data-title>Dayne.online</h1>
-        <p class="tagline"><span data-type>Coming soon</span><span class="caret" aria-hidden="true"></span></p>
+        <h1 class="title">Dayne.online</h1>
+        <p class="line">Photographs &mdash; Writing &mdash; Coming soon</p>
     </main>
 
     <div class="hud">
         <span class="hud-tl" aria-hidden="true">Терминал ДН-04</span>
         <span class="hud-tr" aria-hidden="true">Sys <span data-clock>00:00:00</span></span>
         <span class="hud-bl">Photographs + writing</span>
+        <span class="hud-hint" aria-hidden="true">&lt; Scroll &gt;</span>
         <nav class="hud-br" aria-label="Elsewhere">
             <!-- TODO: real Instagram URL and email address -->
             <a href="#">Instagram</a>

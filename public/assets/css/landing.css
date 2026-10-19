@@ -1,10 +1,11 @@
 /* ==========================================================================
    dayne.online — temporary landing page (green-phosphor terminal)
-   An old, dusty monochrome CRT. The boot logo and the "Dayne.online"
-   title are drawn by landing.js on one canvas; this file handles the DOM
-   around it (boot log, tagline, corner labels) and the glass: scanlines,
-   grain, dust, bezel, flicker. State classes on <html>: .js (script
-   expected), .booting (loader up), .live (title is in), .jolt (glitch).
+   An old, dusty monochrome CRT. The boot logo and the giant looping line
+   of pixel text are drawn by landing.js on one canvas; this file handles
+   the DOM around it (boot status, corner labels, scroll hint) and the
+   glass: scanlines, grain, dust, bezel, flicker. State classes on <html>:
+   .js (script expected), .booting (loader up), .live (line is in),
+   .scrolled (visitor has scrolled once), .jolt (glitch).
    ========================================================================== */
 
 /* One terminal face: VT323 for Latin, Tiny5 for the Cyrillic labels */
@@ -170,9 +171,8 @@ body::after {
 
 /* Vertical hold slips during a glitch */
 .jolt .screen { transform: translateY(-0.6vh) skewX(-1.2deg); }
-.jolt .tagline { transform: translateX(6px); }
 
-/* ---------- Title + tagline ---------- */
+/* ---------- The line ---------- */
 
 .stage {
   position: relative;
@@ -181,13 +181,13 @@ body::after {
   display: grid;
   place-content: center;
   justify-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
   padding-left: var(--gutter-l);
   padding-right: var(--gutter-r);
   text-align: center;
 }
 
-/* No-JS view: the title is plain terminal text */
+/* No-JS view: plain terminal text */
 .title {
   font-weight: 400;
   font-size: clamp(3rem, 12vw, 10rem);
@@ -195,51 +195,21 @@ body::after {
   overflow-wrap: anywhere;
 }
 
-/* With JS the canvas draws the title; the h1 stays for screen readers
-   and the tagline is pinned under the drawn title (--tag-top). */
-.js .title {
+.line {
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* With JS the canvas draws both; they stay in the DOM for screen readers */
+.js .title,
+.js .line {
   position: absolute;
   width: 1px;
   height: 1px;
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
-}
-
-.js .tagline {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: var(--tag-top, 62%);
-  justify-content: center;
-}
-
-.tagline {
-  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  display: inline-flex;
-  align-items: center;
-  min-height: 1.2em;
-}
-
-.tagline::before {
-  content: ">";
-  margin-right: 0.6em;
-}
-
-.caret {
-  display: inline-block;
-  width: 0.55em;
-  height: 0.9em;
-  margin-left: 0.3em;
-  background: var(--phosphor);
-  box-shadow: var(--glow);
-  animation: blink 1.06s steps(1) infinite;
-}
-
-@keyframes blink {
-  50% { opacity: 0; }
 }
 
 /* ---------- Corner HUD ---------- */
@@ -264,6 +234,22 @@ body::after {
 .hud-tr { top: var(--edge-t); right: var(--gutter-r); font-variant-numeric: tabular-nums; }
 .hud-tr span { color: var(--phosphor); }
 .hud-bl { bottom: var(--edge-b); left: var(--gutter-l); }
+
+/* Scroll hint: blinks until the visitor first scrolls, then bows out */
+.hud-hint {
+  bottom: var(--edge-b);
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--phosphor);
+  animation: blink 1.06s steps(1) infinite;
+  transition: opacity 0.3s steps(3);
+}
+
+.scrolled .hud-hint { opacity: 0; }
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
 
 .hud-br {
   bottom: var(--edge-b);
@@ -300,52 +286,24 @@ body::after {
   top: var(--logo-bottom, 60%);
   z-index: 4;
   transform: translateX(-50%);
-  display: grid;
-  gap: 0.6rem;
-  width: min(23rem, calc(100vw - 32px));
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  width: max(var(--logo-w, 10rem), 15rem);
+  max-width: calc(100vw - 32px);
   font-size: 1.375rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
-.loader-log {
-  display: grid;
-  gap: 0.1rem;
-  min-height: 6.6em;
-  color: var(--muted);
-}
+/* Only the latest boot line shows, typed over the last */
+.loader-log li { display: none; white-space: nowrap; color: var(--muted); }
+.loader-log li.current { display: block; }
 
-.loader-log li { visibility: hidden; white-space: pre; }
-.loader-log li.on { visibility: visible; }
-.loader-log li:last-child { color: var(--phosphor); }
+.loader-pct { font-variant-numeric: tabular-nums; }
 
-.loader-bar {
-  display: grid;
-  grid-template-columns: repeat(24, 1fr);
-  gap: 3px;
-  width: 100%;
-  height: 12px;
-  padding: 2px;
-  border: 1px solid var(--line);
-}
-
-.loader-bar i { background: rgba(60, 240, 110, 0.08); }
-
-.loader-bar i.on {
-  background: var(--phosphor);
-  box-shadow: 0 0 6px rgba(60, 240, 110, 0.7);
-}
-
-.loader-pct {
-  justify-self: end;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Before and during boot the page around the title waits */
-.js .tagline,
-.js .hud {
-  opacity: 0;
-}
+/* Before and during boot the corners wait */
+.js .hud { opacity: 0; }
 
 .js.live .loader {
   animation: loader-out 0.3s steps(3) forwards;
@@ -357,8 +315,7 @@ body::after {
   100% { opacity: 0; transform: translateX(-50%) scaleY(0.05); visibility: hidden; }
 }
 
-.js.live .tagline { opacity: 1; transition: opacity 0.2s steps(3) 0.7s; }
-.js.live .hud { opacity: 1; transition: opacity 0.3s steps(4) 1s; }
+.js.live .hud { opacity: 1; transition: opacity 0.3s steps(4) 1.2s; }
 
 /* ---------- Small screens ---------- */
 
@@ -367,6 +324,7 @@ body::after {
   .hud-tr { display: none; }
   .hud-tl { left: 0; right: 0; text-align: center; }
   .hud-bl { bottom: calc(var(--edge-b) + 2.2rem); left: 0; right: 0; text-align: center; }
+  .hud-hint { bottom: auto; top: calc(var(--edge-t) + 2.2rem); }
   .hud-br { left: var(--gutter-l); right: var(--gutter-r); justify-content: center; }
 }
 
@@ -376,8 +334,7 @@ body::after {
   body::after,
   .crt::before,
   .screen,
-  .caret { animation: none; }
+  .hud-hint { animation: none; }
   .js .loader { display: none; }
-  .js .tagline,
   .js .hud { opacity: 1; transition: none; }
 }
