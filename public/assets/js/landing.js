@@ -369,7 +369,7 @@
     // past the edges of the screen
     var far = Math.hypot(w, h);
     for (var q = 0; q < 3; q++) {
-      var p4 = clamp((tb - BANG.ignite - q * 140) / BANG.shock, 0, 1);
+      var p4 = clamp((tb - BANG.ignite - q * BANG.stagger) / BANG.shock, 0, 1);
       if (p4 <= 0 || p4 >= 1) continue;
       var ro = sun.r + (far - sun.r) * ease(p4);
       var band = sun.r * (0.45 - q * 0.12) * (1 - p4 * 0.6);
@@ -393,7 +393,7 @@
       var cp = (tb - (BANG.ignite - BANG.collapse)) / BANG.collapse;
       return r * 0.67 * (1 - 0.7 * cp * cp); // falls in on itself
     }
-    var sp = clamp((tb - BANG.ignite) / 600, 0, 1);
+    var sp = clamp((tb - BANG.ignite) / BANG.snap, 0, 1);
     return r * (1 + 0.3 * Math.sin(sp * Math.PI) * (1 - sp)); // snaps out, overshoots, settles
   }
 
@@ -493,12 +493,15 @@
     swirl: 2200 * Q, // ...for this long
     proto: 2900 * Q, // a core forms and the disc feeds into it...
     feed: 1700 * Q, // ...for this long
-    collapse: 300 * Q, // the core falls in on itself before...
+    collapse: 180 * Q, // the core falls in on itself before...
     ignite: 4800 * Q, // ...ignition: flash, shock rings, shake
-    flash: 650 * Q,
-    shock: 1300 * Q
+    flash: 300 * Q,
+    shock: 700 * Q,
+    stagger: 70 * Q, // between the three shock rings
+    shake: 280 * Q,
+    snap: 300 * Q // the star snapping out to full size
   };
-  var REVEAL_AT = BANG_AT + BANG.ignite + 150 * Q;
+  var REVEAL_AT = BANG_AT + BANG.ignite + 50 * Q;
   var RISE_AT = REVEAL_AT + 200 * Q, RISE_MS = repeat ? 2500 : 8000; // the sunrise
   var DAWN_FROM = 0.2; // share of the rise before daylight starts to spread
 
@@ -550,7 +553,7 @@
       var tb = t - BANG_AT;
       sun.cur = protoRadius(tb);
       // The screen shakes for a moment at ignition
-      var sk = (tb - BANG.ignite) / (500 * Q);
+      var sk = (tb - BANG.ignite) / BANG.shake;
       if (sk >= 0 && sk < 1) {
         var amp = 10 * (1 - sk) * (1 - sk);
         canvas.style.transform = "translate(" + ((Math.random() - 0.5) * amp).toFixed(1) + "px," + ((Math.random() - 0.5) * amp).toFixed(1) + "px)";
