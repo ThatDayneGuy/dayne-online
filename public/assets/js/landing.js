@@ -53,12 +53,22 @@
 
   var css = getComputedStyle(docEl);
   function token(name, fallback) { return (css.getPropertyValue(name) || fallback).trim(); }
-  var INK = token("--ink", "#0d0d0d");
-  var PAPER = token("--paper", "#f2f1ec");
-  var RULE = token("--rule", "rgba(13, 13, 13, 0.14)");
-  var NIGHT = token("--night", "#0d0d0d");
-  var NIGHT_INK = token("--night-ink", "#f2f1ec");
-  var NIGHT_RULE = token("--night-rule", "rgba(242, 241, 236, 0.16)");
+  // Two palettes (muted Y2K): day, and the night before the sunrise. The
+  // sun and the mountain are vertical gradients, top colour to bottom.
+  var PAPER = token("--paper", "#f0f1f3");
+  var NIGHT = token("--night", "#121729");
+  var DAY = {
+    ink: token("--ink", "#16181d"),
+    rule: token("--rule", "rgba(122, 156, 186, 0.32)"),
+    sun: [token("--sun-top", "#e3b3bf"), token("--sun-bottom", "#df8452")],
+    mtn: [token("--chrome-top", "#d3d6db"), token("--chrome-bottom", "#9097a1")]
+  };
+  var DARK = {
+    ink: token("--night-ink", "#c3d4e0"),
+    rule: token("--night-rule", "rgba(195, 212, 224, 0.14)"),
+    sun: [token("--night-sun-top", "#dfe7ee"), token("--night-sun-bottom", "#a9bccb")],
+    mtn: [token("--night-chrome-top", "#59647a"), token("--night-chrome-bottom", "#2c3447")]
+  };
   var FAMILY = token("--display", "Archivo, sans-serif");
   var WEIGHT = 900;
   var TRACKING = -0.03; // em
@@ -106,6 +116,7 @@
   var offset = 0; // css px; the line's whole motion lives here
   var sun = { x: 0, y: 0, r: 0, cur: 0, homeY: 0, startY: 0 }; // cur = radius drawn now
   var rasterBase = 0; // screen y of slot j=0's baseline edge
+  var mTop = 0, mFoot = 0; // css px: the skyline's top and foot
 
   function setFont(c, px) {
     c.font = WEIGHT + " " + px + "px " + FAMILY;
@@ -193,10 +204,10 @@
     // (or lower), its foot stops clear of the links. Each slot gets the spans where
     // the mountain is above it.
     var last = bars[bars.length - 1];
-    var mFoot = h - Math.max(56, h * 0.07);
+    mFoot = h - Math.max(56, h * 0.07);
     // Keep the real proportions: never taller than ~0.3 of the screen's
     // width, so on a tall phone it sits low instead of stretching into spires
-    var mTop = Math.max(stripTop + (last ? last.top + last.height : 0) + pitch * 1.5, mFoot - w * 0.3);
+    mTop = Math.max(stripTop + (last ? last.top + last.height : 0) + pitch * 1.5, mFoot - w * 0.3);
     var step = 2;
     for (var m = 0; m < rows.length; m++) {
       var row = rows[m], my = row.top + thick / 2, spans = [];
@@ -270,7 +281,17 @@
   ------------------------------------------------------------------ */
   // reveal(i) -> 0..1 per slot; even slots wipe in from the left, odd from
   // the right. Omitted = fully shown.
-  function drawScene(c, ink, rule, reveal) {
+  function vgrad(c, y0, y1, stops) {
+    var g = c.createLinearGradient(0, y0 * dpr, 0, y1 * dpr);
+    g.addColorStop(0, stops[0]);
+    g.addColorStop(1, stops[1]);
+    return g;
+  }
+
+  function drawScene(c, pal, reveal) {
+    var ink = pal.ink, rule = pal.rule;
+    var sunFill = vgrad(c, sun.y - sun.cur, sun.y + sun.cur, pal.sun);
+    var mtnFill = vgrad(c, mTop, mFoot, pal.mtn);
     c.setTransform(1, 0, 0, 1, 0, 0);
     c.globalCompositeOperation = "source-over";
     c.clearRect(0, 0, canvas.width, canvas.height);
@@ -323,7 +344,7 @@
         var x1 = Math.round((sun.x - halfW - row.lag) * dpr);
         var x2 = Math.round((sun.x + halfW - row.lag) * dpr);
         c.globalCompositeOperation = "xor";
-        c.fillStyle = ink;
+        c.fillStyle = sunFill;
         c.fillRect(x1, yD, x2 - x1, thD);
       }
 
@@ -332,7 +353,7 @@
       if (r > 0 && row.mtn.length) {
         if (r < 1) wipe();
         c.globalCompositeOperation = "source-over";
-        c.fillStyle = ink;
+        c.fillStyle = mtnFill;
         var mt = Math.max(1, Math.round(thick * MOUNTAIN_BAR * dpr));
         var my0 = Math.round(mid * dpr - mt / 2);
         var shift = row.lag * 0.5; // the mountain sits back, so it shears less
@@ -464,7 +485,7 @@
 
   // Daytime: the scene straight onto the page
   function drawDay(reveal) {
-    drawScene(ctx, INK, RULE, reveal);
+    drawScene(ctx, DAY, reveal);
   }
 
   // Sunrise: night everywhere, then day inside a circle around the sun
@@ -474,8 +495,8 @@
     ctx.globalCompositeOperation = "source-over";
     ctx.fillStyle = NIGHT;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    drawScene(lctx, NIGHT_INK, NIGHT_RULE, reveal);
-    if (tb < BANG.ignite + BANG.shock + 300) drawBirth(lctx, NIGHT_INK, tb);
+    drawScene(lctx, DARK, reveal);
+    if (tb < BANG.ignite + BANG.shock + 300) drawBirth(lctx, DARK.ink, tb);
     ctx.globalAlpha = fade;
     ctx.drawImage(layer, 0, 0);
     ctx.globalAlpha = 1;
@@ -495,7 +516,7 @@
     ctx.clip();
     ctx.fillStyle = PAPER;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    drawScene(lctx, INK, RULE, reveal);
+    drawScene(lctx, DAY, reveal);
     ctx.drawImage(layer, 0, 0);
     ctx.restore();
   }
