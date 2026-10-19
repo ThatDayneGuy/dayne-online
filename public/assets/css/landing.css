@@ -1,35 +1,17 @@
 /* ==========================================================================
    dayne.online — temporary landing page (brutalist / striped type)
-   Flat ink on paper. The ruled sheet, the looping line of barred type
-   and the striped sun are drawn by landing.js on one canvas; this file
-   handles the two links, the night colours the page opens in, and the
-   no-JS fallback (the same bars via a gradient clipped to the text, on
-   plain CSS rules). State classes on <html>: .js (script expected),
-   .day (the sunrise is over).
+   Black on white, nothing else. The looping line of barred type is
+   drawn by landing.js on one canvas; this file handles the counter, the
+   two links, and the no-JS fallback (the same bars, done with a CSS
+   gradient clipped to the text). State classes on <html>: .js (script
+   expected), .live (counter done, line is in).
    ========================================================================== */
 
 :root {
-  /* Layout: a ruled sheet; one line of type through the middle, a
-     striped sun above it, the skyline below, links pinned to the bottom
-     corners. Colour: a muted Y2K palette (digital white, ice blue,
-     chrome, a dusty pink-to-orange sunrise) on otherwise plain ink. */
-  --paper: #f0f1f3; /* digital white */
-  --ink: #16181d;
-  --rule: rgba(122, 156, 186, 0.32); /* ice blue */
-  --sun-top: #e3b3bf; /* dusty baby pink */
-  --sun-bottom: #df8452; /* muted Y2K orange */
-  --chrome-top: #d3d6db; /* chrome silver */
-  --chrome-bottom: #9097a1;
-  --pill: #ffffff;
-  --pill-edge: #d6dae0;
-  /* Night, before the sunrise: deep navy, ice-blue ink, colour withheld */
-  --night: #121729;
-  --night-ink: #c3d4e0;
-  --night-rule: rgba(195, 212, 224, 0.14);
-  --night-sun-top: #dfe7ee;
-  --night-sun-bottom: #a9bccb;
-  --night-chrome-top: #59647a;
-  --night-chrome-bottom: #2c3447;
+  /* Layout: one line of type through the middle, links pinned to the
+     bottom corners, nothing else */
+  --paper: #ffffff;
+  --ink: #000000;
 
   --display: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --mono: "Fragment Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -57,14 +39,6 @@ body {
   overflow: hidden;
   touch-action: none; /* the page never scrolls; touches drive the line */
 }
-
-/* No-JS view: plain hairline rules stand in for the drawn sheet */
-html:not(.js) body {
-  background-image: repeating-linear-gradient(to bottom, transparent 0 calc(1.25rem - 1px), var(--rule) calc(1.25rem - 1px) 1.25rem);
-}
-
-/* Until daybreak the page is night, so nothing flashes paper first */
-.js:not(.day) body { background: var(--night); }
 
 a { color: inherit; text-decoration: none; }
 ::selection { background: var(--ink); color: var(--paper); }
@@ -126,6 +100,24 @@ a { color: inherit; text-decoration: none; }
   white-space: nowrap;
 }
 
+/* ---------- Counter ---------- */
+
+.counter { display: none; }
+
+.js .counter {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  display: block;
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+.js.live .counter { visibility: hidden; }
+
 /* ---------- Links ---------- */
 
 .links {
@@ -143,33 +135,28 @@ a { color: inherit; text-decoration: none; }
   text-transform: uppercase;
 }
 
-/* Web 2.0 pills: white plastic with a hairline edge; they fill with ink
-   on hover */
+/* Underline draws in from the left on hover */
 .links a {
-  padding: 0.55em 1.1em;
-  border: 1px solid var(--pill-edge);
-  border-radius: 999px;
-  background: var(--pill);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 1px 2px rgba(22, 24, 29, 0.06);
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  padding-block: 0.3rem;
+  background: linear-gradient(var(--ink), var(--ink)) no-repeat left bottom / 0 1px;
+  transition: background-size 0.35s cubic-bezier(0.65, 0.05, 0, 1);
 }
 
 .links a::after { content: " \2197"; }
 
 .links a:hover,
 .links a:focus-visible {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--pill);
+  background-size: 100% 1px;
   outline: none;
 }
 
 .js .links { opacity: 0; }
-.js.day .links { opacity: 1; transition: opacity 0.6s ease 0.2s; }
+.js.live .links { opacity: 1; transition: opacity 0.6s ease 0.9s; }
 
 /* ---------- Reduced motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {
+  .js .counter { display: none; }
   .js .links { opacity: 1; transition: none; }
   .links a { transition: none; }
 }
