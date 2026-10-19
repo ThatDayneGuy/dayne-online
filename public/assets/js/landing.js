@@ -1,16 +1,24 @@
 /* ==========================================================================
    dayne.online — temporary landing page motion (brutalist / striped type)
+   The whole page is one raster of horizontal bar slots, like the IBM
+   8-bar logo stretched into a ruled sheet:
+   - the line of heavy type ("dayne.online — coming soon —") is the band
+     where the slots fill with letters
+   - every other slot carries a faint hairline rule
+   - a striped sun (bars thick at the bottom, thin at the top) sits in the
+     space above the line and follows the pointer; where it crosses the
+     type it inverts it, so the letters read as paper cut out of the sun
+   Sequence:
    1. Counter: 000 -> 100 in the middle of the page
-   2. Reveal: one giant line of heavy type ("dayne.online — coming soon —")
-      cut into horizontal bars, like the IBM 8-bar logo. The bars wipe in
-      one at a time, alternating from the left and the right.
+   2. Reveal: the slots wipe in one at a time, top to bottom, alternating
+      from the left and the right
    3. Live: the line loops forever, drifting left. Scrolling (wheel, drag,
-      arrow keys) pushes it sideways with momentum. Each bar has its own
-      lag, so at speed the letters shear apart along the bars, then close
-      up again as the line slows.
+      arrow keys) pushes it sideways with momentum. Each slot has its own
+      lag, so at speed the letters and the sun shear apart along the bars,
+      then close up as the line slows.
    The type is rendered once into an offscreen strip; each frame draws that
-   strip bar by bar, so every bar edge lands on a whole device pixel.
-   No dependencies. Reduced motion: no counter, a still line, no loop.
+   strip slot by slot, so every bar edge lands on a whole device pixel.
+   No dependencies. Reduced motion: no counter, a still page, no loop.
    ========================================================================== */
 
 (function () {
@@ -27,31 +35,40 @@
   var sctx = strip.getContext("2d");
 
   var css = getComputedStyle(docEl);
-  var INK = (css.getPropertyValue("--ink") || "#0d0d0d").trim();
-  var FAMILY = (css.getPropertyValue("--display") || "Archivo, sans-serif").trim();
+  function token(name, fallback) { return (css.getPropertyValue(name) || fallback).trim(); }
+  var INK = token("--ink", "#0d0d0d");
+  var RULE = token("--rule", "rgba(13, 13, 13, 0.14)");
+  var FAMILY = token("--display", "Archivo, sans-serif");
   var WEIGHT = 900;
   var TRACKING = -0.03; // em
 
   var NAME = "dayne.online";
   var TEXT = NAME + " — coming soon — ";
   var BAR = 0.62; // bar thickness as a share of the bar pitch (rest is gap)
+  var RULE_GAP = 10; // css px: hairlines are never closer together than this
 
   /* ------------------------------------------------------------------
      Layout: size the type, render one period of the line into the strip,
-     and work out the bars
+     then lay the raster of slots over the whole screen
   ------------------------------------------------------------------ */
   var w = 0, h = 0, dpr = 1;
   var fontPx = 100, period = 0; // css px
   var scale = 1; // strip px per css px
-  var bars = []; // {top, height} in css px, relative to the strip's top
+  var pitch = 10, thick = 6; // css px: slot spacing and bar thickness
   var stripTop = 0; // css px from the top of the screen
+  var bars = []; // slots that cross the type: {top, height, j}, strip-relative
+  var rows = []; // every slot on screen, top to bottom: {j, top, weight, lag, bar}
+  var lagByJ = {}; // keeps each slot's lag across a resize
+  var ruleStep = 1;
   var offset = 0; // css px; the line's whole motion lives here
-  var lags = [], weights = [];
+  var sun = { x: 0, y: 0, r: 0, homeX: 0, homeY: 0, placed: false };
 
   function setFont(c, px) {
     c.font = WEIGHT + " " + px + "px " + FAMILY;
     if ("letterSpacing" in c) c.letterSpacing = (TRACKING * px) + "px";
   }
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
   function layout() {
     var prevFont = fontPx;
@@ -76,28 +93,21 @@
     var stripH = ascent + descent + pad * 2;
     var baseline = pad + ascent;
 
-    // Bars are anchored so the baseline and the x-height both land on bar
-    // edges; ascenders and descenders carry on at the same pitch.
-    var nx = Math.max(3, Math.min(7, Math.floor(xh / 4.5)));
-    var pitch = xh / (nx - 1 + BAR);
-    var thick = pitch * BAR;
+    // Slots are anchored so the baseline and the x-height both land on bar
+    // edges; ascenders and descenders carry on at the same pitch. Slot j=0
+    // sits on the baseline; j counts up the page.
+    var nx = clamp(Math.floor(xh / 4.5), 3, 7);
+    pitch = xh / (nx - 1 + BAR);
+    thick = pitch * BAR;
     bars = [];
+    var byJ = {};
     var jMin = -Math.ceil(descent / pitch), jMax = nx - 1 + Math.ceil((ascent - xh) / pitch);
     for (var j = jMax; j >= jMin; j--) {
       var top = baseline - j * pitch - thick;
-      var bottom = top + thick;
+      var bottom = Math.min(stripH, top + thick);
       top = Math.max(0, top);
-      bottom = Math.min(stripH, bottom);
-      if (bottom - top > 0.5) bars.push({ top: top, height: bottom - top, j: j });
+      if (bottom - top > 0.5) bars.push(byJ[j] = { top: top, height: bottom - top, j: j });
     }
-
-    // Each bar's share of the shear: top bars lead, bottom bars trail, and
-    // neighbours alternate a little so the split reads as stripes
-    lags = bars.map(function (b, i) { return lags[i] || 0; });
-    weights = bars.map(function (b, i) {
-      var u = bars.length > 1 ? i / (bars.length - 1) : 0.5;
-      return (0.5 - u) * 2 + (i % 2 ? 0.3 : -0.3);
-    });
 
     // Render one period of the line, plus a little extra so copies overlap
     scale = Math.min(dpr, 16000 / (period + fontPx));
@@ -113,6 +123,35 @@
 
     // Centre the x-height band on the screen
     stripTop = Math.round(h / 2 - (baseline - xh / 2));
+
+    // The raster: every slot from the top of the screen to the bottom.
+    // Each slot's share of the shear: slots above the middle of the type
+    // lead, slots below trail (capped, so far slots move as a block), and
+    // neighbours alternate a little so the split reads as stripes.
+    var base = stripTop + baseline; // screen y of the baseline
+    var jc = (jMax + jMin) / 2, half = Math.max(1, (jMax - jMin) / 2);
+    rows = [];
+    for (var k = Math.floor(base / pitch); k >= Math.ceil((base - thick - h) / pitch); k--) {
+      rows.push({
+        j: k,
+        top: base - k * pitch - thick,
+        weight: clamp((k - jc) / half, -1.5, 1.5) + (k % 2 ? 0.3 : -0.3),
+        lag: lagByJ[k] || 0,
+        bar: byJ[k] || null
+      });
+    }
+    ruleStep = Math.max(1, Math.ceil(RULE_GAP / pitch));
+
+    // The sun rests centred in the space above the type
+    var typeTop = stripTop + (bars.length ? bars[0].top : 0);
+    sun.r = Math.max(24, Math.min(typeTop * 0.42, w * 0.22));
+    sun.homeX = w / 2;
+    sun.homeY = typeTop / 2;
+    if (!sun.placed || reduceMotion) {
+      sun.x = sun.homeX;
+      sun.y = sun.homeY;
+      sun.placed = true;
+    }
   }
 
   // Trim slivers: where a letter edge falls just inside a bar (the top of a
@@ -125,12 +164,12 @@
     for (var i = 0; i < bars.length; i++) {
       var y0 = Math.round(bars[i].top * scale);
       var y1 = Math.min(strip.height, Math.round((bars[i].top + bars[i].height) * scale));
-      var rows = y1 - y0;
-      if (rows <= 0) continue;
+      var n = y1 - y0;
+      if (n <= 0) continue;
       for (var x = 0; x < W; x++) {
         var ink = 0;
         for (var y = y0; y < y1; y++) ink += d[(y * W + x) * 4 + 3];
-        if (ink === 0 || ink >= rows * 255 * 0.5) continue;
+        if (ink === 0 || ink >= n * 255 * 0.5) continue;
         for (var yy = y0; yy < y1; yy++) d[(yy * W + x) * 4 + 3] = 0;
       }
     }
@@ -144,55 +183,91 @@
   }
 
   /* ------------------------------------------------------------------
-     Drawing
+     Drawing. Slots never overlap vertically, so each one can use its own
+     compositing: type first, the sun XORed over it, the rule tucked
+     behind both.
   ------------------------------------------------------------------ */
-  // reveal(i) -> 0..1 per bar; even bars wipe in from the left, odd from
+  // reveal(i) -> 0..1 per slot; even slots wipe in from the left, odd from
   // the right. Omitted = fully shown.
   function draw(reveal) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = "source-over";
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     var W = canvas.width;
     var periodD = period * dpr;
     var f = dpr / scale; // strip px -> device px
+    var hair = Math.max(1, Math.round(dpr));
+    var stripTopD = Math.round(stripTop * dpr);
 
-    for (var i = 0; i < bars.length; i++) {
-      var b = bars[i];
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
       var r = reveal ? reveal(i) : 1;
       if (r <= 0) continue;
+      var mid = row.top + thick / 2;
 
-      // Whole pixels on both sides, so no bar samples a sliver of its
-      // neighbour's row (that shows up as a hairline in the gap)
-      var sy = Math.round(b.top * scale);
-      var sh = Math.max(1, Math.round((b.top + b.height) * scale) - sy);
-      var dy = Math.round(stripTop * dpr) + Math.round(sy * f);
-      var dh = Math.max(1, Math.round(sh * f));
-
-      ctx.save();
-      if (r < 1) {
+      var clipped = r < 1;
+      if (clipped) {
+        var y0 = Math.floor(row.top * dpr) - 1, y1 = Math.ceil((row.top + thick) * dpr) + 1;
+        ctx.save();
         ctx.beginPath();
-        if (i % 2) ctx.rect(W * (1 - r), dy, W * r, dh);
-        else ctx.rect(0, dy, W * r, dh);
+        if (i % 2) ctx.rect(W * (1 - r), y0, W * r, y1 - y0);
+        else ctx.rect(0, y0, W * r, y1 - y0);
         ctx.clip();
       }
-      var x = (offset - lags[i]) * dpr;
-      var base = ((x % periodD) + periodD) % periodD - periodD;
-      for (var x0 = base; x0 < W; x0 += periodD) {
-        ctx.drawImage(strip, 0, sy, strip.width, sh, Math.round(x0), dy, strip.width * f, dh);
+
+      // 1. The type. Whole pixels on both sides, so no bar samples a sliver
+      //    of its neighbour's row (that shows up as a hairline in the gap).
+      var b = row.bar;
+      if (b) {
+        var sy = Math.round(b.top * scale);
+        var sh = Math.max(1, Math.round((b.top + b.height) * scale) - sy);
+        var dy = stripTopD + Math.round(sy * f);
+        var dh = Math.max(1, Math.round(sh * f));
+        var x = (offset - row.lag) * dpr;
+        var start = ((x % periodD) + periodD) % periodD - periodD;
+        for (var x0 = start; x0 < W; x0 += periodD) {
+          ctx.drawImage(strip, 0, sy, strip.width, sh, Math.round(x0), dy, strip.width * f, dh);
+        }
       }
-      ctx.restore();
+
+      // 2. The sun: one bar per slot it crosses, thin at the top, full at
+      //    the bottom. XOR inverts the type wherever the two meet.
+      var dyS = mid - sun.y;
+      if (Math.abs(dyS) < sun.r) {
+        var halfW = Math.sqrt(sun.r * sun.r - dyS * dyS);
+        var th = thick * (0.18 + 0.82 * (dyS + sun.r) / (2 * sun.r));
+        var thD = Math.max(1, Math.round(th * dpr));
+        var yD = Math.round(mid * dpr - thD / 2);
+        var x1 = Math.round((sun.x - halfW - row.lag) * dpr);
+        var x2 = Math.round((sun.x + halfW - row.lag) * dpr);
+        ctx.globalCompositeOperation = "xor";
+        ctx.fillStyle = INK;
+        ctx.fillRect(x1, yD, x2 - x1, thD);
+      }
+
+      // 3. The rule, behind everything already in the slot
+      if (((row.j % ruleStep) + ruleStep) % ruleStep === 0) {
+        ctx.globalCompositeOperation = "destination-over";
+        ctx.fillStyle = RULE;
+        ctx.fillRect(0, Math.round(mid * dpr - hair / 2), W, hair);
+      }
+
+      ctx.globalCompositeOperation = "source-over";
+      if (clipped) ctx.restore();
     }
   }
 
   /* ------------------------------------------------------------------
-     Scroll input -> sideways momentum
+     Input: scroll -> sideways momentum; pointer -> where the sun goes
   ------------------------------------------------------------------ */
   var DRIFT = -0.55; // px per frame at rest, right to left
   var vel = 0; // extra px per frame from the visitor
   var live = false;
+  var aim = null; // {x, y} the sun is heading for, or null = home
 
   function push(dx) {
     if (!live) return;
-    vel = Math.max(-90, Math.min(90, vel + dx));
+    vel = clamp(vel + dx, -90, 90);
   }
 
   window.addEventListener("wheel", function (e) {
@@ -205,8 +280,11 @@
   window.addEventListener("pointerdown", function (e) {
     if (e.target.closest && e.target.closest("a")) return;
     drag = { x: e.clientX, y: e.clientY };
+    aim = { x: e.clientX, y: e.clientY };
   });
   window.addEventListener("pointermove", function (e) {
+    // A mouse or pen steers the sun just by hovering; a finger while down
+    if (e.pointerType !== "touch" || drag) aim = { x: e.clientX, y: e.clientY };
     if (!drag) return;
     var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
     drag.x = e.clientX;
@@ -214,8 +292,14 @@
     // Sideways drags pull the line along; vertical ones scroll it
     push((Math.abs(dx) > Math.abs(dy) ? dx : -dy) * 0.35);
   });
-  window.addEventListener("pointerup", function () { drag = null; });
-  window.addEventListener("pointercancel", function () { drag = null; });
+  function release(e) {
+    drag = null;
+    if (e.pointerType === "touch") aim = null; // the sun goes home
+  }
+  window.addEventListener("pointerup", release);
+  window.addEventListener("pointercancel", release);
+  docEl.addEventListener("mouseleave", function () { aim = null; });
+  window.addEventListener("blur", function () { aim = null; });
 
   window.addEventListener("keydown", function (e) {
     var k = e.key;
@@ -230,7 +314,7 @@
   var repeat = false;
   try { repeat = !!sessionStorage.getItem("booted"); sessionStorage.setItem("booted", "1"); } catch (e) {}
   var COUNT_MS = repeat ? 500 : 1400;
-  var STAGGER = 45, WIPE = 650;
+  var WIPE = 650, SWEEP = 900; // ms per slot wipe; ms from first to last slot
 
   function ease(x) { return 1 - Math.pow(1 - x, 3); }
 
@@ -270,7 +354,8 @@
       }
 
       var since = t - revealAt;
-      var revealing = since < (bars.length - 1) * STAGGER + WIPE;
+      var stagger = rows.length > 1 ? SWEEP / (rows.length - 1) : 0;
+      var revealing = since < SWEEP + WIPE;
       if (!revealing) live = true;
 
       // Momentum eases back to the resting drift
@@ -278,14 +363,21 @@
       if (Math.abs(vel) < 0.01) vel = 0;
       offset += (DRIFT + vel) * k;
 
-      // Each bar chases its share of the speed, so they shear and re-close
-      var limit = w * 0.3;
-      for (var i = 0; i < bars.length; i++) {
-        var target = Math.max(-limit, Math.min(limit, vel * weights[i] * 4));
-        lags[i] += (target - lags[i]) * Math.min(1, 0.15 * k);
+      // Each slot chases its share of the speed, so they shear and re-close
+      var limit = w * 0.3, follow = Math.min(1, 0.15 * k);
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
+        row.lag += (clamp(vel * row.weight * 4, -limit, limit) - row.lag) * follow;
+        lagByJ[row.j] = row.lag;
       }
 
-      draw(revealing ? function (i) { return ease(Math.max(0, Math.min(1, (since - i * STAGGER) / WIPE))); } : null);
+      // The sun eases toward the pointer once the page is live, else home
+      var tx = live && aim ? aim.x : sun.homeX, ty = live && aim ? aim.y : sun.homeY;
+      var glide = Math.min(1, 0.08 * k);
+      sun.x += (tx - sun.x) * glide;
+      sun.y += (ty - sun.y) * glide;
+
+      draw(revealing ? function (i) { return ease(clamp((since - i * stagger) / WIPE, 0, 1)); } : null);
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
